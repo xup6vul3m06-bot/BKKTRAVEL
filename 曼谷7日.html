@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#131722" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>曼谷 7/15–7/21 行程 App｜7/18–7/20 集中版</title>
+  <style>
+    :root{
+      --bg:#0c0f17;--panel:#151a25;--panel2:#1c2230;--text:#f5f7fb;--muted:#9ba7ba;
+      --accent:#f4c95d;--accent2:#74d3ae;--danger:#ff7d7d;--line:rgba(255,255,255,.09);
+      --shadow:0 16px 40px rgba(0,0,0,.28);--radius:22px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;background:var(--bg)}
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",Roboto,Arial,sans-serif;background:
+      radial-gradient(circle at 12% 0%,rgba(244,201,93,.14),transparent 28%),
+      radial-gradient(circle at 95% 15%,rgba(116,211,174,.12),transparent 24%),var(--bg);color:var(--text);min-height:100vh}
+    button,a,input{font:inherit}
+    a{text-decoration:none;color:inherit}
+    .app{max-width:780px;margin:auto;padding:0 14px 110px}
+    .hero{padding:calc(22px + env(safe-area-inset-top)) 4px 18px}
+    .eyebrow{font-size:12px;letter-spacing:.16em;color:var(--accent);font-weight:800;text-transform:uppercase}
+    h1{font-size:32px;line-height:1.08;margin:8px 0 10px;letter-spacing:-.04em}
+    .sub{color:var(--muted);line-height:1.65;font-size:14px}
+    .flight-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+    .flight{background:linear-gradient(145deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:var(--shadow)}
+    .flight .tag{font-size:11px;color:var(--accent2);font-weight:800}.flight strong{display:block;font-size:19px;margin:5px 0}.flight small{display:block;color:var(--muted);line-height:1.45}
+    .alert{margin:12px 0 16px;padding:13px 14px;border:1px solid rgba(244,201,93,.3);background:rgba(244,201,93,.08);border-radius:16px;color:#fff5d5;font-size:13px;line-height:1.55}
+    .toolbar{position:sticky;top:0;z-index:20;margin:0 -14px;padding:9px 14px 10px;background:linear-gradient(to bottom,rgba(12,15,23,.98),rgba(12,15,23,.9),transparent);backdrop-filter:blur(16px)}
+    .tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:5px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
+    .tab{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:999px;padding:9px 13px;white-space:nowrap;cursor:pointer;font-size:13px;font-weight:750}
+    .tab.active{background:var(--accent);color:#161616;border-color:transparent}
+    .summary{display:flex;align-items:center;justify-content:space-between;margin:8px 2px 16px;color:var(--muted);font-size:12px}
+    .progress{height:5px;background:var(--panel2);border-radius:999px;overflow:hidden;flex:1;margin-left:14px}.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:.25s}
+    .day{display:none}.day.active{display:block}
+    .day-head{display:flex;justify-content:space-between;align-items:flex-end;margin:8px 2px 13px}.day-head h2{font-size:22px;margin:0}.day-head span{color:var(--muted);font-size:12px}
+    .route-note{font-size:13px;color:var(--muted);line-height:1.6;margin:-4px 2px 14px}
+    .card{position:relative;background:linear-gradient(160deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin:11px 0;box-shadow:var(--shadow);overflow:hidden}
+    .card.optional{border-style:dashed}.card.done{opacity:.56}.card.done .place{text-decoration:line-through}
+    .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}.card.optional::before{background:var(--accent2)}.card.caution::before{background:var(--danger)}
+    .topline{display:flex;gap:10px;align-items:flex-start}.time{min-width:52px;color:var(--accent);font-weight:850;font-size:14px;padding-top:2px}.main{min-width:0;flex:1}.place{font-weight:850;font-size:17px;line-height:1.35}.meta{color:var(--muted);font-size:12px;margin-top:5px;line-height:1.45}
+    .check{width:29px;height:29px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text);cursor:pointer;font-size:16px}.done .check{background:var(--accent2);color:#07130e}
+    .desc{font-size:13px;line-height:1.65;margin:13px 0 12px;color:#dbe1eb}.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}.chip{font-size:11px;color:#d7deea;background:rgba(255,255,255,.06);padding:5px 8px;border-radius:999px;border:1px solid var(--line)}.chip.must{color:#1b1606;background:var(--accent)}.chip.warn{color:#2a0909;background:#ffaaa5}
+    .actions{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:7px}.btn{display:flex;align-items:center;justify-content:center;gap:6px;min-height:39px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.055);color:#f7f8fa;font-size:12px;font-weight:800;cursor:pointer;padding:8px}.btn.map{background:#f4c95d;color:#15120a;border:none}.btn.ig{background:linear-gradient(120deg,#6e43ff,#d44283,#ff9c42);border:none}.btn:active{transform:scale(.98)}
+    .branch{padding:14px;border-radius:18px;background:rgba(116,211,174,.07);border:1px dashed rgba(116,211,174,.35);margin:12px 0}.branch b{color:var(--accent2)}
+    .section-title{font-size:19px;margin:25px 2px 10px}.source-grid{display:grid;grid-template-columns:1fr;gap:8px}.source{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:11px 12px}.source .num{width:29px;height:29px;border-radius:9px;background:var(--panel2);display:grid;place-items:center;color:var(--accent);font-size:12px;font-weight:900}.source .txt{flex:1;min-width:0}.source b{display:block;font-size:13px}.source small{color:var(--muted);font-size:11px}.source a{font-size:12px;color:var(--accent2);font-weight:800}
+    .tools{background:linear-gradient(145deg,rgba(244,201,93,.12),rgba(116,211,174,.08));border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-top:18px}.tools h3{margin:0 0 6px}.tools p{font-size:12px;color:var(--muted);line-height:1.55;margin:0 0 12px}.translate-row{display:grid;grid-template-columns:1fr auto;gap:8px}.translate-row input{min-width:0;border:1px solid var(--line);background:#0f131c;color:var(--text);border-radius:12px;padding:11px 12px;outline:none}.translate-row button{border:0;border-radius:12px;padding:0 14px;background:var(--accent2);color:#07130e;font-weight:850}
+    .utility-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.utility-row .btn{min-height:45px}
+    .hotel{margin-top:10px}.hotel label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px}.hotel input{width:100%;border:1px solid var(--line);background:#0f131c;color:var(--text);border-radius:12px;padding:11px 12px;outline:none}
+    .footer-note{font-size:11px;color:#7f8a9d;line-height:1.6;margin:18px 4px;text-align:center}
+    .bottom{position:fixed;left:0;right:0;bottom:0;z-index:30;padding:8px 14px calc(8px + env(safe-area-inset-bottom));background:rgba(12,15,23,.92);backdrop-filter:blur(18px);border-top:1px solid var(--line)}
+    .bottom-inner{max-width:752px;margin:auto;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.bottom .btn{background:var(--panel2);min-height:46px}.bottom .primary{background:var(--accent);color:#17130a;border:0}
+    .modal{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.65);display:none;align-items:flex-end}.modal.show{display:flex}.sheet{width:100%;max-width:780px;margin:auto;background:#151a25;border-radius:24px 24px 0 0;padding:20px 16px calc(24px + env(safe-area-inset-bottom));border:1px solid var(--line)}.sheet h3{margin:0 0 8px}.sheet p{color:var(--muted);font-size:13px;line-height:1.6}.sheet .close{width:100%;margin-top:10px;border:0;border-radius:13px;padding:12px;background:var(--panel2);color:var(--text);font-weight:800}
+    @media(max-width:460px){h1{font-size:29px}.flight-grid{grid-template-columns:1fr}.actions{grid-template-columns:1fr 1fr}.actions .map{grid-column:span 2}.card{padding:15px}.app{padding-left:11px;padding-right:11px}.toolbar{margin-left:-11px;margin-right:-11px;padding-left:11px;padding-right:11px}}
+  </style>
+</head>
+<body>
+<div class="app" id="top">
+  <header class="hero">
+    <div class="eyebrow">Bangkok · 2026</div>
+    <h1>曼谷每日行程 App<br>景點集中 7/18–7/20</h1>
+    <div class="sub">主要觀光與美食集中在 7/18–7/20，三天正式行程皆從 09:00 開始；7/15–7/17保留抵達、休息與準備，7/21只安排回程。每個地點皆可開啟 Google Maps 導航與 Google 圖片翻譯。</div>
+    <div class="flight-grid">
+      <div class="flight"><span class="tag">去程 · 7/15（三）</span><strong>JX745</strong><small>TPE 13:55 → BKK 16:40<br>抵達後入境、領行李、進市區</small></div>
+      <div class="flight"><span class="tag">回程 · 7/21（二）</span><strong>JX746</strong><small>BKK 17:50 → TPE 22:40<br>15:50–17:50 保留報到時間</small></div>
+    </div>
+    <div class="alert"><b>行程策略：</b>7/18跑舊城與唐人街、7/19跑東區藝術與高空景觀、7/20跑三頭象神與Siam／Chit Lom。7/21最晚14:00離開市區，15:50開始兩小時Check-in。</div>
+  </header>
+
+  <div class="toolbar">
+    <div class="tabs" id="tabs"></div>
+    <div class="summary"><span id="progressText">已完成 0 / 0</span><div class="progress"><i id="progressBar"></i></div></div>
+  </div>
+
+  <main id="days"></main>
+
+  <section class="tools" id="translateTools">
+    <h3>即時翻譯工具</h3>
+    <p>Google 不允許第三方網頁直接 iframe 內嵌相機翻譯；此 App 以一鍵喚起官方「圖片翻譯」模式，手機可拍照或選擇照片。</p>
+    <div class="translate-row"><input id="translateInput" placeholder="輸入中文或泰文，例如：不要辣"/><button onclick="translateText()">翻譯</button></div>
+    <div class="utility-row">
+      <a class="btn" target="_blank" rel="noopener" href="https://translate.google.com/?sl=th&tl=zh-TW&op=images">📷 拍照翻譯</a>
+      <a class="btn" target="_blank" rel="noopener" href="https://lens.google.com/">◎ Google Lens</a>
+    </div>
+    <div class="hotel"><label>住宿地點（會自動保存在此裝置）</label><input id="hotelInput" placeholder="輸入飯店名稱或地址" /></div>
+    <div class="utility-row">
+      <button class="btn" onclick="goHotel()">🏨 導航回飯店</button>
+      <button class="btn" onclick="resetProgress()">↺ 重設完成狀態</button>
+    </div>
+  </section>
+
+  <h2 class="section-title">20 則攻略對照</h2>
+  <div class="source-grid" id="sources"></div>
+  <div class="footer-note">營業時間、票價、預約與臨時休館可能變動；出發前請再次點 Google Maps 或官方頁面確認。路程時間會受住宿位置、雨勢及尖峰塞車影響。</div>
+</div>
+
+<div class="bottom">
+  <div class="bottom-inner">
+    <button class="btn" onclick="goToday()">📅 行程</button>
+    <a class="btn primary" href="https://translate.google.com/?sl=th&tl=zh-TW&op=images" target="_blank" rel="noopener">📷 拍照翻譯</a>
+    <a class="btn" href="https://www.google.com/maps" target="_blank" rel="noopener">🗺 Maps</a>
+  </div>
+</div>
+
+<div class="modal" id="infoModal" onclick="closeModal(event)">
+  <div class="sheet"><h3>使用方式</h3><p>「導航」會以目前位置為起點開啟 Google Maps；「IG 攻略」會回到原始貼文；右上角打勾可紀錄完成狀態。資料只保存在你的瀏覽器，不會上傳。</p><button class="close" onclick="document.getElementById('infoModal').classList.remove('show')">知道了</button></div>
+</div>
+
+<script>
+const ig = [
+'https://www.instagram.com/reel/DZrDRipTAOi/?igsh=MTlrcGM1dGxuZmRxZw==',
+'https://www.instagram.com/reel/DVqgJ3REtsl/?igsh=MW50bmlnazV6MzE4aA==',
+'https://www.instagram.com/reel/DZKqhYSsiMu/?igsh=c3preWhyaW92ZnJi',
+'https://www.instagram.com/reel/DY7GRWsB4zR/?igsh=aHdpamJjdHl4dXY3',
+'https://www.instagram.com/p/DaNeCuxDyIk/?igsh=MWZ1dG9rMzF3eXNpNQ==',
+'https://www.instagram.com/reel/DZ2CGxazo75/?igsh=MXVkMTR5ZzZzeW1kZg==',
+'https://www.instagram.com/reel/DZAKK1lhOKp/?igsh=MWZzajVwOTk0bmRhNw==',
+'https://www.instagram.com/reel/DSZ9zOVktEg/?igsh=dmliMmd3MGhjMTNy',
+'https://www.instagram.com/reel/DSy1ALtkVQk/?igsh=MWQzN2t2anRiZTlpMw==',
+'https://www.instagram.com/reel/DTdQyuID6tL/?igsh=MTNwOGE2eWI3MmJ2cg==',
+'https://www.instagram.com/reel/DX0aHP5P9u7/?igsh=ZmxseHM2cjltOHhn',
+'https://www.instagram.com/reel/DYQICaES-TP/?igsh=a3doZm1jdTNscWs1',
+'https://www.instagram.com/reel/DJEHBN2T2Jz/?igsh=c2oxbWJ0azZvYThn',
+'https://www.instagram.com/reel/DEAOMGPS4-6/?igsh=YzhweTg1eWZiM3c2',
+'https://www.instagram.com/reel/DIyRzV3zKZt/?igsh=MWdudjQ3cmo1MDZncQ==',
+'https://www.instagram.com/reel/DOyDBy4k7rL/?igsh=MnBiaGk3bjRpd2Rj',
+'https://www.instagram.com/reel/DZpFkfrzjhe/?igsh=ZWRjdWYzN3NsMnp0',
+'https://www.instagram.com/reel/DOdT2FDEu9D/?igsh=MTZwcjQ2czY3cHhhNA==',
+'https://www.instagram.com/reel/DYexDDFTFlT/?igsh=cW1jYmx0dDg4aHls',
+'https://www.instagram.com/reel/DQs7PEyAfGi/?igsh=MXI1dHlxNmE1NXBkZw=='
+];
+const sourceNames=[
+['BAAN LANGSUAN','7/20 午餐；三頭象神回市區後順接'],
+['72 小時爆吃 15 間','7/18 Song Wat／唐人街挑 2–4 間'],
+['Factory Coffee','7/20 14:00 快速停留'],
+['GalileOasis','7/20 14:50；控制在 40 分鐘'],
+['曼谷慢旅行靈感','併入 7/20 Siam／Chit Lom 路線'],
+['32Bar x Specialty Chocolate','7/18 14:00'],
+['三頭象神取景點','7/20 10:50'],
+['NEXTOPIA','7/20 15:45'],
+['Dib Bangkok','7/19 13:00；需先訂票'],
+['Akara Sky Hanuman','7/19 日落與晚餐'],
+['Maru Dessert House','7/19 16:15'],
+['L7 Lion Cafe','三天集中版不排；僅作夜間替代'],
+['Auntie Nid 泰奶','7/18 09:00'],
+['Myste Restaurant','已由 Copper Beyond 取代'],
+['Red Sky Rooftop','與 Akara 重複，列替代選項'],
+['The O.B.A. 香氛','7/20 Siam Paragon，同棟順逛'],
+['Openface BKK','7/19 10:00；09:00 從飯店出發'],
+['Benkoff Café','7/19 11:45；塞車時可略過'],
+['onest at Song Wat','7/18 15:15'],
+['Bake A Wish Baker 鹽可頌','7/20 Copper 後外帶']
+];
+const days=[
+ {date:'7/15',weekday:'三',title:'抵達曼谷・只辦入住',note:'今天不排景點。完成入境、進市區、入住與晚餐後就休息。',items:[
+  {t:'13:55',p:'JX745 起飛',m:'桃園機場 TPE',q:'Taiwan Taoyuan International Airport Terminal 1',d:'隨身保留護照、電子機票、住宿資料與曼谷網路方案。',chips:['航班'],fixed:true},
+  {t:'16:40',p:'抵達 BKK',m:'Suvarnabhumi Airport',q:'Suvarnabhumi Airport',d:'完成入境、領行李、網卡與少量換匯。',chips:['入境'],fixed:true},
+  {t:'18:30',p:'前往飯店／入住',m:'依住宿位置',q:'Bangkok',d:'把飯店地址儲存在 App，下車後確認附近便利商店與 BTS／MRT。',chips:['入住','不排景點'],fixed:true},
+  {t:'20:00',p:'飯店附近晚餐',m:'步行或短程 Grab',q:'restaurants near Bangkok',d:'簡單吃、補水、提早睡。',chips:['休息'],optional:true}
+ ]},
+ {date:'7/16',weekday:'四',title:'完整休整日',note:'不排正式景點，專心恢復體力、熟悉交通與處理旅途用品。',items:[
+  {t:'09:00',p:'自然醒／飯店早餐',m:'不設鬧鐘也可以',q:'breakfast near Bangkok',d:'今天不需要趕行程。',chips:['休整'],optional:true},
+  {t:'11:00',p:'換匯、網卡、交通卡與藥妝補給',m:'飯店附近商場即可',q:'shopping mall near Bangkok',d:'把後面三天需要的現金、網路與雨具一次準備好。',chips:['準備'],optional:true},
+  {t:'15:00',p:'按摩／回飯店午睡',m:'至少 90 分鐘',q:'massage near Bangkok',d:'避免跨區，讓身體適應曼谷天氣。',chips:['休息'],optional:true},
+  {t:'19:00',p:'附近晚餐',m:'不排熱門候位店',q:'restaurants near Bangkok',d:'控制飲酒與熬夜，保留體力。',chips:['早睡'],optional:true}
+ ]},
+ {date:'7/17',weekday:'五',title:'行前準備日',note:'不跑景點。只處理預約、衣物、票券與三天路線確認。',items:[
+  {t:'09:00',p:'早餐與慢步調上午',m:'飯店周邊',q:'breakfast near Bangkok',d:'今天仍以休息為主。',chips:['休整'],optional:true},
+  {t:'11:00',p:'確認所有預約',m:'Dib・Akara・Copper',q:'Bangkok',d:'截圖保存訂位 QR Code、地址、用餐場次與取消條款。',chips:['必做','預約'],fixed:true,must:true},
+  {t:'14:00',p:'整理三日隨身包',m:'雨傘、防曬、行動電源、薄外套',q:'Bangkok',d:'寺廟日另準備過肩、過膝服裝。',chips:['準備'],fixed:true},
+  {t:'18:00',p:'提早晚餐／提早休息',m:'22:30 前就寢',q:'restaurants near Bangkok',d:'7/18開始連續三天密集移動。',chips:['早睡'],optional:true}
+ ]},
+ {date:'7/18',weekday:'六',title:'舊城・Talat Noi・Song Wat・唐人街',note:'由西往東南一路走：Auntie Nid → Wat Pho → Talat Noi → Song Wat → Yaowarat，全日不折返。',items:[
+  {t:'09:00',p:'Auntie Nid／ป้าปากแดง กาแฟโบราณ',m:'112 Thanon Mahannop｜30–40 分鐘',q:'ป้าปากแดง กาแฟโบราณ Bangkok',d:'先喝泰奶或古早咖啡，可直接要求少甜。',chips:['泰奶','正式行程開始'],ig:12,must:true},
+  {t:'09:45',p:'前往 Wat Pho',m:'Grab 約 10–20 分鐘',q:'Wat Pho Bangkok',d:'週末車流不穩，叫到車後就直接出發。',chips:['移動'],fixed:true},
+  {t:'10:15',p:'Wat Pho 臥佛寺',m:'約 75 分鐘',q:'Wat Pho Bangkok',d:'上午較不炎熱；穿過肩、過膝服裝。',chips:['寺廟','服裝'],must:true},
+  {t:'11:40',p:'前往 Talat Noi／簡單午餐',m:'Grab 約 15–25 分鐘',q:'Talat Noi Bangkok',d:'午餐選可快速入座的店，不為網紅店排太久。',chips:['午餐'],optional:true},
+  {t:'12:45',p:'Talat Noi 巷弄散步',m:'約 60 分鐘',q:'Talat Noi Bangkok',d:'老屋、街頭藝術與河岸巷弄，依雨勢彈性縮短。',chips:['散步','拍照'],optional:true},
+  {t:'14:00',p:'32Bar x Specialty Chocolate',m:'Soi Wanit 2｜約 60 分鐘',q:'32Bar x Specialty Chocolate Bangkok',d:'以室內巧克力飲品作為午後休息站。',chips:['巧克力','室內'],ig:5,must:true},
+  {t:'15:15',p:'onest at Song Wat',m:'1198 Song Wat Rd｜約 40 分鐘',q:'onest at Song Wat 1198 Song Wat Road',d:'在地香氛與居家選物，逛完直接沿 Song Wat Road 前進。',chips:['香氛','同區'],ig:18,must:true},
+  {t:'16:00',p:'Song Wat 逛店＋攻略美食',m:'步行範圍｜約 2 小時',q:'Song Wat Road Bangkok',d:'「72小時爆吃15間」只選 2–4 間，保留晚餐胃容量。',chips:['選物','彈性美食'],ig:1,must:true},
+  {t:'18:15',p:'Yaowarat 唐人街晚餐',m:'步行或短程 Tuk-tuk',q:'Yaowarat Road Bangkok',d:'晚餐後直接回飯店，今晚不再跨區。',chips:['晚餐','夜景'],must:true},
+  {t:'20:30',p:'返回飯店休息',m:'隔天 09:00 再出發',q:'Bangkok',d:'補水並替手機、行動電源充電。',chips:['休息'],fixed:true}
+ ]},
+ {date:'7/19',weekday:'日',title:'Openface・Thonglor・Dib・Sathorn・Ploenchit',note:'09:00先往東區移動，再一路往市中心：Ramkhamhaeng → Thonglor → Sukhumvit 40 → Sathorn → Ploenchit。',items:[
+  {t:'09:00',p:'從飯店出發前往 Openface',m:'建議 Grab｜預留約 45–60 分鐘',q:'Openface BKK 86/2 Ramkhamhaeng 21',d:'店家約 10:00 開門，因此 09:00 作為正式出發時間。',chips:['09:00 出發','遠距離'],fixed:true,must:true},
+  {t:'10:00',p:'Openface BKK',m:'Ramkhamhaeng 21｜約 60 分鐘',q:'Openface BKK 86/2 Ramkhamhaeng 21',d:'把這站當早午餐，不另排正餐。',chips:['早午餐','東區'],ig:16,must:true},
+  {t:'11:10',p:'前往 Thonglor',m:'Grab 約 25–45 分鐘',q:'Benkoff Cafe Thonglor Bangkok',d:'路況延誤超過 20 分鐘時，直接略過 Benkoff 前往 Dib。',chips:['交通緩衝'],fixed:true},
+  {t:'11:45',p:'Benkoff Café',m:'Thonglor｜約 40 分鐘',q:'Benkoff Cafe Thonglor Bangkok',d:'快速喝咖啡與拍照；這站是當天第一個可刪景點。',chips:['咖啡','可刪'],ig:17,optional:true},
+  {t:'12:40',p:'前往 Dib Bangkok',m:'Sukhumvit 40｜短程 Grab',q:'Dib Bangkok',d:'提前準備入場 QR Code。',chips:['移動'],fixed:true},
+  {t:'13:00',p:'Dib Bangkok',m:'約 2 小時 15 分',q:'Dib Bangkok',d:'星期日正常開館；建議預訂 13:00 左右入場。',chips:['美術館','需訂票'],ig:8,must:true},
+  {t:'15:20',p:'前往 Empire Tower',m:'Grab 約 25–40 分鐘',q:'Maru Dessert House Empire Tower Bangkok',d:'若 DIB 逛得較久，Maru 縮短為 45 分鐘。',chips:['交通'],fixed:true},
+  {t:'16:15',p:'Maru Dessert House',m:'Empire Tower 55F｜約 60 分鐘',q:'Maru Dessert House Empire Tower Bangkok',d:'甜點與高樓景觀休息站。',chips:['甜點','景觀'],ig:10,must:true},
+  {t:'17:15',p:'前往 One City Centre',m:'Grab 約 20–35 分鐘',q:'Akara Sky Hanuman One City Centre Bangkok',d:'預留週末塞車及報到時間。',chips:['交通緩衝'],fixed:true},
+  {t:'17:45',p:'Akara Sky Hanuman',m:'One City Centre 58–61F',q:'Akara Sky Hanuman One City Centre Bangkok',d:'日落、夜景與晚餐一次完成；建議提前預約。Red Sky 與此站功能重複，不另外塞入。',chips:['日落','晚餐','需預約'],ig:9,must:true},
+  {t:'20:30',p:'返回飯店',m:'不再安排酒吧',q:'Bangkok',d:'隔天是最緊湊的一天，今晚務必早睡。',chips:['休息'],fixed:true}
+ ]},
+ {date:'7/20',weekday:'一',title:'三頭象神・Langsuan・Ratchathewi・Siam・Copper',note:'本次最密集的一天。09:00在三頭象神開始，之後一路回市中心；每站必須準時離開，Copper場次優先級最高。',items:[
+  {t:'09:00',p:'Erawan Museum 三頭象神博物館',m:'Samut Prakan｜約 1 小時 45 分',q:'Erawan Museum Bangkok',d:'建議 08:00 左右從市區出發，09:00 準時入館；正式參觀仍從 09:00 開始。',chips:['最遠點','準時'],ig:6,must:true},
+  {t:'10:50',p:'三頭象神取景點',m:'博物館周邊｜20 分鐘',q:'7-Eleven near Erawan Museum photo spot',d:'拍攝完整象神背景時注意車流，不要站上車道。',chips:['拍照','注意交通'],ig:6,must:true},
+  {t:'11:15',p:'返回 Langsuan',m:'Grab 或 BTS｜約 60–75 分鐘',q:'BAAN LANGSUAN Bangkok',d:'若車程超過預期，直接通知餐廳並縮短午餐。',chips:['長距離移動'],fixed:true},
+  {t:'12:30',p:'BAAN LANGSUAN 午餐',m:'約 60–70 分鐘',q:'BAAN LANGSUAN Bangkok',d:'老宅泰式料理；13:40前離開，避免壓縮後續行程。',chips:['泰式午餐','限時'],ig:0,must:true},
+  {t:'14:00',p:'Factory Coffee – Bangkok',m:'Phaya Thai｜約 35–40 分鐘',q:'Factory Coffee Bangkok Phaya Thai',d:'只安排一杯咖啡與拍照，不排長時間內用。',chips:['咖啡','快速停留'],ig:2,must:true},
+  {t:'14:50',p:'GalileOasis',m:'Ratchathewi｜約 40 分鐘',q:'GalileOasis Bangkok',d:'聚焦主要老屋與拍照區，15:30準時離開。',chips:['藝文','控制時間'],ig:3,must:true},
+  {t:'15:45',p:'NEXTOPIA',m:'Siam Paragon 5F｜約 45 分鐘',q:'NEXTOPIA Siam Paragon',d:'以核心展區為主，不逐區停留。',chips:['室內','Siam'],ig:7,must:true},
+  {t:'16:30',p:'The O.B.A. 香氛',m:'Siam Paragon 4F｜約 25 分鐘',q:'The O.B.A Siam Paragon',d:'與 NEXTOPIA 同棟，直接搭手扶梯完成。',chips:['香氛','同棟'],ig:15,must:true},
+  {t:'17:00',p:'前往 Gaysorn Amarin',m:'BTS／空橋／短程 Grab',q:'Copper Beyond Buffet Gaysorn Amarin',d:'17:30前完成報到；Copper訂位場次優先於所有前面景點。',chips:['硬截止'],fixed:true,must:true},
+  {t:'17:30',p:'Copper Beyond 報到',m:'Gaysorn Amarin 3F',q:'Copper Beyond Buffet Gaysorn Amarin',d:'實際時間依訂位憑證；建議提前20–30分鐘。',chips:['提前報到','需預約'],must:true},
+  {t:'18:00',p:'Copper Beyond Buffet',m:'約 2 小時',q:'Copper Beyond Buffet Gaysorn Amarin',d:'若訂位不是18:00，將下午景點依序前移或刪減，不能壓縮報到時間。',chips:['晚餐','已指定'],must:true},
+  {t:'20:20',p:'Bake A Wish Baker 外帶鹽可頌',m:'Banthat Thong／朱拉美食街',q:'Bake A Wish Baker Banthat Thong Bangkok',d:'剛吃完自助餐只外帶；現場詢問保存與回烤方式。',chips:['外帶','回台前購買'],ig:19,must:true},
+  {t:'21:15',p:'返回飯店整理行李',m:'完成退稅單與行李重量確認',q:'Bangkok',d:'明天只保留回程流程。',chips:['整理行李'],fixed:true}
+ ]},
+ {date:'7/21',weekday:'二',title:'回程日・不排景點',note:'上午只做行李與退房準備。14:00是離開市區的硬截止，15:50起完整保留兩小時Check-in。',items:[
+  {t:'09:00',p:'飯店早餐／自然醒',m:'不跨區',q:'breakfast near Bangkok',d:'不安排最後打卡，避免行李與時間失控。',chips:['休整'],optional:true},
+  {t:'10:00',p:'整理行李與退稅資料',m:'飯店',q:'Bangkok',d:'確認護照、行動電源、液體、發票與退稅單。',chips:['必做'],fixed:true,must:true},
+  {t:'11:00',p:'Check-out／寄放行李',m:'飯店',q:'Bangkok',d:'只在飯店附近吃午餐。',chips:['退房'],fixed:true,must:true},
+  {t:'12:00',p:'飯店附近午餐',m:'13:15前結束',q:'restaurants near Bangkok',d:'不選需要排隊的餐廳。',chips:['準時'],optional:true},
+  {t:'13:30',p:'取行李／最後確認',m:'飯店',q:'Bangkok',d:'確認護照、手機、錢包與鹽可頌。',chips:['行李'],fixed:true,must:true},
+  {t:'14:00',p:'最晚離開曼谷市區',m:'前往 Suvarnabhumi Airport',q:'Suvarnabhumi Airport',d:'雨天或住宿離機場線較遠時，13:30出發更安全。',chips:['硬截止'],fixed:true,must:true},
+  {t:'15:30',p:'抵達 BKK',m:'確認星宇櫃位',q:'Suvarnabhumi Airport Departures',d:'先處理報到、行李、安檢與出境，再逛免稅店。',chips:['機場'],fixed:true},
+  {t:'15:50',p:'JX746 Check-in／安檢／出境',m:'完整保留 2 小時',q:'Suvarnabhumi Airport Departures',d:'此時段不可挪用。',chips:['2小時','不可壓縮'],fixed:true,must:true},
+  {t:'17:50',p:'JX746 起飛',m:'BKK → TPE 22:40',q:'Suvarnabhumi Airport',d:'行程結束。',chips:['回台灣'],fixed:true}
+ ]}
+];
+
+const $=s=>document.querySelector(s);
+const tabs=$('#tabs'), daysEl=$('#days');
+function mapUrl(q){return 'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(q)+'&travelmode=transit'}
+function cameraUrl(){return 'https://translate.google.com/?sl=th&tl=zh-TW&op=images'}
+function cardHTML(item,di,ii){
+ const id=`d${di}i${ii}`, done=localStorage.getItem('done_'+id)==='1';
+ return `<article class="card ${item.optional?'optional ':''}${item.caution?'caution ':''}${done?'done':''}" data-id="${id}">
+ <div class="topline"><div class="time">${item.t}</div><div class="main"><div class="place">${item.p}</div><div class="meta">${item.m}</div></div><button class="check" aria-label="完成" onclick="toggleDone('${id}')">${done?'✓':'○'}</button></div>
+ <div class="desc">${item.d}</div><div class="chips">${(item.chips||[]).map(c=>`<span class="chip ${item.must?'must':''}">${c}</span>`).join('')}</div>
+ <div class="actions"><a class="btn map" target="_blank" rel="noopener" href="${mapUrl(item.q)}">↗ Google Maps 導航</a>${item.ig!==undefined?`<a class="btn ig" target="_blank" rel="noopener" href="${ig[item.ig]}">◎ IG 攻略</a>`:`<button class="btn" onclick="openInfo()">ⓘ 說明</button>`}<a class="btn" target="_blank" rel="noopener" href="${cameraUrl()}">📷 翻譯</a></div></article>`;
+}
+function render(){
+ tabs.innerHTML=days.map((d,i)=>`<button class="tab ${i===0?'active':''}" data-day="${i}" onclick="showDay(${i})">Day ${i+1} · ${d.date}（${d.weekday}）</button>`).join('');
+ daysEl.innerHTML=days.map((d,i)=>`<section class="day ${i===0?'active':''}" data-day="${i}"><div class="day-head"><h2>Day ${i+1}｜${d.title}</h2><span>${d.date}（${d.weekday}）</span></div><div class="route-note">${d.note}</div>${d.items.map((x,j)=>cardHTML(x,i,j)).join('')}</section>`).join('');
+ $('#sources').innerHTML=sourceNames.map((s,i)=>`<div class="source"><span class="num">${i+1}</span><div class="txt"><b>${s[0]}</b><small>${s[1]}</small></div><a target="_blank" rel="noopener" href="${ig[i]}">查看</a></div>`).join('');
+ updateProgress();
+}
+function showDay(i,scroll=true){document.querySelectorAll('.tab,.day').forEach(x=>x.classList.remove('active'));document.querySelector(`.tab[data-day="${i}"]`).classList.add('active');document.querySelector(`.day[data-day="${i}"]`).classList.add('active');localStorage.setItem('activeDay',i);if(scroll)window.scrollTo({top:document.querySelector('.toolbar').offsetTop,behavior:'smooth'});updateProgress();}
+function toggleDone(id){const key='done_'+id;localStorage.setItem(key,localStorage.getItem(key)==='1'?'0':'1');const card=document.querySelector(`[data-id="${id}"]`);const done=localStorage.getItem(key)==='1';card.classList.toggle('done',done);card.querySelector('.check').textContent=done?'✓':'○';updateProgress();}
+function updateProgress(){const all=[...document.querySelectorAll('.card')];const done=all.filter(c=>c.classList.contains('done')).length;$('#progressText').textContent=`已完成 ${done} / ${all.length}`;$('#progressBar').style.width=(all.length?done/all.length*100:0)+'%';}
+function translateText(){const t=$('#translateInput').value.trim();if(!t)return $('#translateInput').focus();window.open('https://translate.google.com/?sl=auto&tl=th&text='+encodeURIComponent(t)+'&op=translate','_blank');}
+function goHotel(){const h=$('#hotelInput').value.trim();if(!h)return $('#hotelInput').focus();window.open(mapUrl(h),'_blank');}
+function resetProgress(){if(confirm('要清除所有完成紀錄嗎？')){Object.keys(localStorage).filter(k=>k.startsWith('done_')).forEach(k=>localStorage.removeItem(k));render();const a=Number(localStorage.getItem('activeDay')||0);showDay(a)}}
+function goToday(){const now=new Date();let i=0;if(now.getFullYear()===2026&&now.getMonth()===6&&now.getDate()>=15&&now.getDate()<=21)i=now.getDate()-15;showDay(i)}
+function openInfo(){$('#infoModal').classList.add('show')}
+function closeModal(e){if(e.target.id==='infoModal')e.target.classList.remove('show')}
+$('#hotelInput').addEventListener('input',e=>localStorage.setItem('hotel',e.target.value));
+$('#translateInput').addEventListener('keydown',e=>{if(e.key==='Enter')translateText()});
+render();
+$('#hotelInput').value=localStorage.getItem('hotel')||'';
+const savedRaw=localStorage.getItem('activeDay');
+if(savedRaw!==null){const saved=Number(savedRaw);if(Number.isInteger(saved)&&saved>=0&&saved<days.length)showDay(saved,false);}else{showDay(3,false);}
+</script>
+</body>
+</html>
