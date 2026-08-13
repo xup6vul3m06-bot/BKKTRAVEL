@@ -1,0 +1,234 @@
+/* =============================================================================
+   A4 文件樣式 — 建議書與比較表
+   .sheet 模擬紙張，因此固定使用淺色調（不隨深色模式反轉），
+   螢幕預覽與列印輸出共用同一份規則，所見即所得。
+   ========================================================================== */
+
+.sheet {
+  /* 紙張自帶一組固定色票，與介面 token 脫鉤 */
+  --p-ink:      #14181C;
+  --p-ink-2:    #4A5058;
+  --p-ink-3:    #7A828A;
+  --p-rule:     #D9DCD8;
+  --p-rule-2:   #B9BDB8;
+  --p-navy:     #1C4470;
+  --p-navy-deep:#0E2338;
+  --p-navy-soft:#EDF2F8;
+  --p-brass:    #A87D2B;
+  --p-surface:  #FFFFFF;
+  --p-surface-2:#F7F8F5;
+  --p-up:       #C02B2B;
+  --p-down:     #12764C;
+
+  /* 紙張永遠是白的：圖表角色色與系列色在此固定為淺色版本，
+     不隨介面深色模式反轉，否則列印會拿到深色系列色。 */
+  --c-surface: #FFFFFF;
+  --c-grid:    #E7E9E5;
+  --c-axis:    #B9BDB8;
+  --c-ink:     #14181C;
+  --c-ink-2:   #4A5058;
+  --c-ink-3:   #7A828A;
+  --series-1: #2a78d6;  --series-2: #eb6834;  --series-3: #1baf7a;  --series-4: #eda100;
+  --series-5: #e87ba4;  --series-6: #008300;  --series-7: #4a3aa7;  --series-8: #e34948;
+
+  width: 210mm;
+  min-height: 297mm;
+  padding: 13mm 15mm 11mm;
+  background: var(--p-surface);
+  color: var(--p-ink);
+  font-family: var(--font-ui);
+  font-size: 9.5pt;
+  line-height: 1.55;
+  box-shadow: 0 2px 10px rgba(14, 35, 56, .16);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.sheet__body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.sheet::before {
+  content: "";
+  position: absolute; inset: 0 0 auto 0; height: 4mm;
+  background: var(--p-navy);
+}
+
+/* ------------------------------------------------------------- 文件頁首 -- */
+
+.doc-header { border-bottom: 1.5px solid var(--p-ink); padding-bottom: 6px; margin-bottom: 3.2mm; }
+.doc-header__name {
+  font-family: var(--font-doc); font-size: 21pt; font-weight: 700;
+  color: var(--p-navy-deep); letter-spacing: .04em; line-height: 1.15;
+}
+.doc-header__row { display: flex; align-items: flex-end; gap: 16px; margin-top: 6px; }
+.doc-header__meta { font-size: 9pt; color: var(--p-ink-2); }
+.doc-header__meta b { color: var(--p-ink); font-weight: 700; }
+.doc-header__meta .sep { color: var(--p-rule-2); margin: 0 8px; }
+.doc-header__dates {
+  margin-left: auto; text-align: right; font-size: 8pt; color: var(--p-ink-3);
+  font-variant-numeric: tabular-nums; white-space: nowrap; line-height: 1.5;
+}
+
+/* ------------------------------------------------------------- 節次標題 -- */
+
+.doc-h {
+  display: flex; align-items: baseline; gap: 8px;
+  font-family: var(--font-doc); font-size: 12.5pt; color: var(--p-navy-deep);
+  margin: 0 0 2.5mm;
+}
+.doc-h__n {
+  font-family: var(--font-num); font-size: 10pt; font-weight: 700;
+  color: var(--p-brass); letter-spacing: .02em;
+}
+.doc-h__note { margin-left: auto; font-family: var(--font-ui); font-size: 8pt; color: var(--p-ink-3); font-weight: 400; }
+
+.doc-block { margin-bottom: 3.6mm; }
+.doc-block--tight { margin-bottom: 3.5mm; }
+
+/* ------------------------------------------------------- 總覽與成效卡 ---- */
+
+.ov-grid { display: grid; grid-template-columns: 1.15fr 2.4fr; gap: 4mm; align-items: stretch; }
+.ov-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; }
+
+.pcard {
+  border: 1px solid var(--p-rule); border-radius: 3px;
+  padding: 2.6mm 3.2mm; background: var(--p-surface-2);
+  display: flex; flex-direction: column; justify-content: center;
+}
+.pcard__label { font-size: 7.5pt; color: var(--p-ink-3); font-weight: 700; letter-spacing: .06em; }
+.pcard__plan { font-family: var(--font-doc); font-size: 14pt; color: var(--p-navy-deep); font-weight: 700; margin: 1mm 0 2mm; }
+.pcard__amt { font-size: 13pt; font-weight: 700; color: var(--p-ink); font-variant-numeric: tabular-nums; }
+.pcard__amt small { font-size: 8pt; color: var(--p-ink-3); margin-right: 2px; }
+
+.pstat { text-align: center; border: 1px solid var(--p-rule); border-radius: 3px; padding: 2.4mm 2mm; background: var(--p-surface); }
+.pstat__label { font-size: 8pt; color: var(--p-ink-2); font-weight: 700; }
+.pstat__value {
+  font-size: 13.5pt; font-weight: 700; color: var(--p-navy); margin-top: 1.2mm;
+  font-variant-numeric: tabular-nums; letter-spacing: -.01em;
+}
+.pstat__value small { font-size: 8.5pt; color: var(--p-ink-3); margin-right: 2px; font-weight: 600; }
+.pstat__foot { font-size: 7pt; color: var(--p-ink-3); margin-top: .8mm; }
+.pstat--key { border-color: var(--p-brass); border-top: 2px solid var(--p-brass); }
+.pstat--key .pstat__value { color: var(--p-navy-deep); }
+
+/* ---------------------------------------------------------- 文件用表格 --- */
+
+table.ptable { width: 100%; border-collapse: collapse; font-size: 8.4pt; }
+table.ptable th {
+  background: var(--p-surface-2); color: var(--p-ink-2);
+  font-size: 7.5pt; font-weight: 700; letter-spacing: .04em;
+  text-align: left; padding: 1.5mm 2.2mm; border-bottom: 1.2px solid var(--p-rule-2);
+  border-top: 1.2px solid var(--p-rule-2);
+}
+table.ptable td { padding: 1.5mm 2.2mm; border-bottom: 1px solid var(--p-rule); vertical-align: middle; }
+table.ptable tbody tr:last-child td { border-bottom: 1.2px solid var(--p-rule-2); }
+table.ptable .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.ptable .name { font-weight: 700; }
+table.ptable tfoot td {
+  font-weight: 700; padding: 1.5mm 2.2mm; border-bottom: 0;
+  background: var(--p-navy-soft);
+}
+.ptag {
+  display: inline-block; padding: .3mm 1.6mm; border-radius: 2px; font-size: 7.5pt;
+  border: 1px solid var(--p-rule-2); color: var(--p-ink-2); background: var(--p-surface-2);
+  white-space: nowrap;
+}
+.pswatch { display: inline-block; width: 2.6mm; height: 2.6mm; border-radius: 1px; margin-right: 1.6mm; vertical-align: baseline; }
+
+/* --------------------------------------------------------------- 圖表 ---- */
+
+.pchart-grid { display: grid; gap: 3mm; }
+.pchart-grid--2 { grid-template-columns: 1fr 1fr; }
+.pchart-grid--3 { grid-template-columns: repeat(3, 1fr); }
+
+.pchart { border: 1px solid var(--p-rule); border-radius: 3px; padding: 2mm 2.4mm 2.2mm; background: var(--p-surface); }
+.pchart__title { font-size: 8.5pt; font-weight: 700; color: var(--p-ink); text-align: center; }
+.pchart__sub { font-size: 6.6pt; color: var(--p-ink-3); text-align: center; margin-bottom: 1mm; }
+.pchart .legend { font-size: 6.4pt; color: var(--p-ink-2); justify-content: center; gap: 2px 7px; margin-top: 1mm; }
+.pchart .legend__val { color: var(--p-ink-3); }
+
+/* ------------------------------------------------------------ 持倉附錄 --- */
+
+.hold-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+.hold-card { border: 1px solid var(--p-rule); border-radius: 3px; overflow: hidden; break-inside: avoid; }
+.hold-card__head { background: var(--p-navy-deep); color: #fff; padding: 2.2mm 3mm; }
+.hold-card__head h4 { font-size: 9pt; line-height: 1.35; }
+.hold-card__head .sub { font-size: 7pt; opacity: .78; margin-top: .6mm; font-variant-numeric: tabular-nums; }
+.hold-card table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+.hold-card th { background: var(--p-surface-2); color: var(--p-ink-3); font-size: 7.5pt; text-align: left; padding: 1.4mm 3mm; font-weight: 700; }
+.hold-card td { padding: 1.6mm 3mm; border-top: 1px solid var(--p-rule); }
+.hold-card td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--p-navy); }
+
+/* ------------------------------------------------------------ 風險警語 --- */
+
+.disclaimer { margin-top: auto; padding-top: 2.6mm; border-top: 1px solid var(--p-rule); }
+.disclaimer h5 { font-size: 8pt; color: var(--p-ink); letter-spacing: .04em; margin-bottom: 1.2mm; }
+.disclaimer ol { margin: 0; padding-left: 4mm; font-size: 6.4pt; color: var(--p-ink-2); line-height: 1.45; }
+.disclaimer li { margin-bottom: .6mm; }
+.disclaimer b { color: var(--p-ink); }
+
+.sheet__foot {
+  margin-top: 2mm; padding-top: 1.6mm; border-top: 1px solid var(--p-rule);
+  display: flex; gap: 12px; font-size: 7pt; color: var(--p-ink-3);
+}
+.sheet__foot .pageno { margin-left: auto; font-variant-numeric: tabular-nums; }
+
+/* ---------------------------------------------------------- 比較表版面 --- */
+
+.cmp-head { border-bottom: 1.5px solid var(--p-ink); padding-bottom: 5px; margin-bottom: 4mm;
+  display: flex; align-items: flex-end; gap: 12px; }
+.cmp-head__title { font-family: var(--font-doc); font-size: 16pt; color: var(--p-navy-deep); font-weight: 700; }
+.cmp-head__sub { font-size: 8.5pt; color: var(--p-ink-2); margin-top: 1mm; }
+.cmp-head__no { margin-left: auto; font-family: var(--font-num); font-size: 14pt; color: var(--p-brass); font-weight: 700; }
+
+table.cmp { width: 100%; border-collapse: collapse; font-size: 8.5pt; table-layout: fixed; }
+table.cmp th {
+  background: var(--p-navy-deep); color: #fff; font-size: 7.5pt; font-weight: 700;
+  text-align: left; padding: 2mm 2.2mm; letter-spacing: .03em;
+}
+table.cmp td { padding: 4mm 2.2mm; border-bottom: 1px solid var(--p-rule); vertical-align: top; }
+table.cmp tbody tr:nth-child(even) { background: var(--p-surface-2); }
+table.cmp .c-name { font-weight: 700; font-size: 8.8pt; color: var(--p-navy-deep); }
+table.cmp .c-sub { font-size: 7pt; color: var(--p-ink-3); margin-top: .6mm; }
+table.cmp .c-nav { font-variant-numeric: tabular-nums; font-weight: 700; }
+table.cmp .c-hold { font-size: 7.6pt; color: var(--p-ink-2); line-height: 1.5; }
+table.cmp .c-hold b { font-weight: 700; color: var(--p-ink); font-variant-numeric: tabular-nums; }
+
+.cmp-note { margin-top: 3mm; font-size: 7.5pt; color: var(--p-ink-2); background: var(--p-navy-soft);
+  border-left: 2px solid var(--p-navy); padding: 2mm 3mm; }
+
+/* --------------------------------------------------------------- 列印 ---- */
+
+/* 移到畫面外而不是 display:none —— 隱藏的元素量不到高度，
+   自動縮放就無法在列印前算出正確比例。 */
+#printRoot {
+  position: absolute; left: -20000px; top: 0;
+  width: 210mm; visibility: hidden;
+}
+
+@page { size: A4; margin: 0; }
+
+@media print {
+  html, body { background: #fff !important; margin: 0; padding: 0; }
+  body > *:not(#printRoot) { display: none !important; }
+
+  #printRoot {
+    display: block !important;
+    position: static; left: auto; width: auto; visibility: visible;
+  }
+  #printRoot .sheet {
+    box-shadow: none;
+    margin: 0;
+    break-after: page;
+    page-break-after: always;
+  }
+  #printRoot .sheet:last-child { break-after: auto; page-break-after: auto; }
+
+  .sheet, .sheet * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .hold-card, .pchart, .pstat, tr { break-inside: avoid; page-break-inside: avoid; }
+}

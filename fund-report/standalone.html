@@ -1,0 +1,2987 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>基金配置建議書產生器</title>
+<meta name="description" content="比較表列基金的淨值、風險等級與前五大持股，配置後輸出配息與本金成長預估的 A4 建議書 PDF。">
+<style>
+/* ==== assets/app.css ==== */
+/* =============================================================================
+   基金配置建議書產生器 — 介面樣式
+   色彩全部走 token；深色值同時定義在 media query 與 [data-theme] 兩處，
+   讓「跟隨系統」與「手動切換」兩種狀態都能正確解析。
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* 紙面與墨色（中性色帶一點青綠，避免純灰的無機感） */
+  --paper:        #F1F2EF;
+  --surface:      #FFFFFF;
+  --surface-2:    #F8F9F6;
+  --surface-3:    #EEF0EC;
+  --ink:          #14191E;
+  --ink-2:        #4C555D;
+  --ink-3:        #7C858C;
+  --rule:         #DEE0DC;
+  --rule-strong:  #C4C8C3;
+
+  /* 主色：藏青。次要重音：黃銅（只用於節次編號與關鍵數字底線） */
+  --navy:         #1C4470;
+  --navy-deep:    #0E2338;
+  --navy-soft:    #E7EDF4;
+  --navy-line:    #B9CBDE;
+  --brass:        #A87D2B;
+  --brass-soft:   #F4EEDF;
+
+  /* 台股慣例：紅漲綠跌。僅用於報酬率與漲跌，不當作系列色 */
+  --up:           #C02B2B;
+  --down:         #12764C;
+
+  /* 圖表系列色（已通過色盲分離度與亮度帶檢驗，固定順序不可循環） */
+  --series-1: #2a78d6;  --series-2: #eb6834;  --series-3: #1baf7a;  --series-4: #eda100;
+  --series-5: #e87ba4;  --series-6: #008300;  --series-7: #4a3aa7;  --series-8: #e34948;
+  --grid:     #E4E6E2;
+  --axis:     #C4C8C3;
+
+  /* 圖表引擎讀取的角色色（.sheet 內會被紙張色票覆寫） */
+  --c-surface: var(--surface);
+  --c-grid:    var(--grid);
+  --c-axis:    var(--axis);
+  --c-ink:     var(--ink);
+  --c-ink-2:   var(--ink-2);
+  --c-ink-3:   var(--ink-3);
+
+  --font-ui:  -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC",
+              "Microsoft JhengHei", "Segoe UI", system-ui, sans-serif;
+  --font-doc: "Noto Serif TC", "Source Han Serif TC", "Songti TC", "Songti SC",
+              PMingLiU, Georgia, serif;
+  --font-num: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+
+  --r-sm: 3px;  --r-md: 5px;  --r-lg: 8px;
+  --shadow: 0 1px 2px rgba(14, 35, 56, .05), 0 4px 14px rgba(14, 35, 56, .05);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #0F1417;  --surface: #161C21;  --surface-2: #1B2228;  --surface-3: #212a31;
+    --ink: #E9ECEA;    --ink-2: #A9B2B8;    --ink-3: #7E888F;
+    --rule: #2A333A;   --rule-strong: #3A444B;
+    --navy: #7FA8D6;   --navy-deep: #CBDCEE; --navy-soft: #1C2A38; --navy-line: #33475C;
+    --brass: #D6AC5C;  --brass-soft: #2A2418;
+    --up: #E2635F;     --down: #3FA97A;
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+    --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
+    --grid: #242D34;   --axis: #3A444B;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 14px rgba(0,0,0,.25);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #0F1417;  --surface: #161C21;  --surface-2: #1B2228;  --surface-3: #212a31;
+  --ink: #E9ECEA;    --ink-2: #A9B2B8;    --ink-3: #7E888F;
+  --rule: #2A333A;   --rule-strong: #3A444B;
+  --navy: #7FA8D6;   --navy-deep: #CBDCEE; --navy-soft: #1C2A38; --navy-line: #33475C;
+  --brass: #D6AC5C;  --brass-soft: #2A2418;
+  --up: #E2635F;     --down: #3FA97A;
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+  --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
+  --grid: #242D34;   --axis: #3A444B;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 14px rgba(0,0,0,.25);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 { margin: 0; text-wrap: balance; font-weight: 700; line-height: 1.3; }
+p { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--navy); }
+
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--navy);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+/* ---------------------------------------------------------------- 頁首 --- */
+
+.topbar {
+  position: sticky; top: 0; z-index: 40;
+  background: var(--surface);
+  border-bottom: 1px solid var(--rule);
+}
+
+.topbar__inner {
+  max-width: 1280px; margin: 0 auto; padding: 12px 24px;
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+}
+
+.brand { display: flex; align-items: baseline; gap: 10px; margin-right: auto; }
+.brand__mark {
+  font-family: var(--font-doc); font-size: 19px; font-weight: 700;
+  color: var(--navy-deep); letter-spacing: .04em;
+}
+.brand__sub { font-size: 12px; color: var(--ink-3); letter-spacing: .08em; }
+
+.tabs { display: flex; gap: 2px; background: var(--surface-3); padding: 3px; border-radius: var(--r-md); }
+.tab {
+  appearance: none; border: 0; background: transparent; color: var(--ink-2);
+  padding: 7px 15px; border-radius: var(--r-sm); cursor: pointer;
+  font-size: 14px; font-weight: 600; white-space: nowrap;
+  transition: background .15s, color .15s;
+}
+.tab:hover { color: var(--ink); }
+.tab[aria-selected="true"] { background: var(--surface); color: var(--navy-deep); box-shadow: 0 1px 2px rgba(14,35,56,.12); }
+
+.icon-btn {
+  appearance: none; background: var(--surface); border: 1px solid var(--rule);
+  color: var(--ink-2); width: 34px; height: 34px; border-radius: var(--r-md);
+  cursor: pointer; display: grid; place-items: center; font-size: 15px;
+}
+.icon-btn:hover { border-color: var(--rule-strong); color: var(--ink); }
+
+/* -------------------------------------------------------------- 版面 ----- */
+
+.wrap { max-width: 1280px; margin: 0 auto; padding: 24px; }
+.panel[hidden] { display: none; }
+
+.page-head { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+.page-head h2 { font-family: var(--font-doc); font-size: 22px; color: var(--navy-deep); }
+.page-head p { color: var(--ink-2); font-size: 13.5px; }
+.page-head__actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+
+.card {
+  background: var(--surface); border: 1px solid var(--rule);
+  border-radius: var(--r-lg); box-shadow: var(--shadow);
+}
+.card__head {
+  padding: 14px 18px; border-bottom: 1px solid var(--rule);
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.card__head h3 { font-size: 15px; color: var(--navy-deep); }
+.card__head .hint { font-size: 12.5px; color: var(--ink-3); }
+.card__body { padding: 18px; }
+
+/* ------------------------------------------------------------- 表單元件 -- */
+
+.btn {
+  appearance: none; cursor: pointer;
+  border: 1px solid var(--rule-strong); background: var(--surface); color: var(--ink);
+  padding: 8px 14px; border-radius: var(--r-md); font-size: 13.5px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
+  transition: background .15s, border-color .15s;
+}
+.btn:hover { background: var(--surface-2); border-color: var(--ink-3); }
+.btn--primary { background: var(--navy); border-color: var(--navy); color: #fff; }
+.btn--primary:hover { background: var(--navy-deep); border-color: var(--navy-deep); }
+:root[data-theme="dark"] .btn--primary,
+:root:not([data-theme="light"]) .btn--primary { color: #0F1417; }
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .btn--primary { color: #fff; }
+}
+.btn--ghost { background: transparent; border-color: transparent; color: var(--ink-2); padding: 6px 10px; }
+.btn--ghost:hover { background: var(--surface-3); color: var(--ink); }
+.btn--sm { padding: 5px 10px; font-size: 12.5px; }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
+
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field > label { font-size: 12px; font-weight: 600; color: var(--ink-2); letter-spacing: .03em; }
+.input, .select {
+  background: var(--surface); border: 1px solid var(--rule-strong);
+  border-radius: var(--r-md); padding: 8px 10px; width: 100%;
+  font-size: 14px; color: var(--ink);
+}
+.input:focus, .select:focus { border-color: var(--navy); outline: none; box-shadow: 0 0 0 3px var(--navy-soft); }
+.input--num { font-family: var(--font-num); text-align: right; font-variant-numeric: tabular-nums; }
+
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  appearance: none; cursor: pointer; font-size: 13px; font-weight: 600;
+  border: 1px solid var(--rule-strong); background: var(--surface); color: var(--ink-2);
+  padding: 5px 12px; border-radius: 999px; transition: .15s;
+}
+.chip:hover { border-color: var(--ink-3); color: var(--ink); }
+.chip[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: #fff; }
+:root[data-theme="dark"] .chip[aria-pressed="true"] { color: #0F1417; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .chip[aria-pressed="true"] { color: #0F1417; }
+}
+
+.toolbar { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.toolbar .field { min-width: 150px; }
+
+/* --------------------------------------------------------------- 表格 ---- */
+
+.table-scroll { overflow-x: auto; }
+table.data { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+table.data th, table.data td {
+  padding: 10px 12px; text-align: left; vertical-align: top;
+  border-bottom: 1px solid var(--rule);
+}
+table.data thead th {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--surface-2); color: var(--ink-2);
+  font-size: 12px; font-weight: 700; letter-spacing: .04em; white-space: nowrap;
+  border-bottom: 1px solid var(--rule-strong);
+}
+table.data thead th.sortable { cursor: pointer; user-select: none; }
+table.data thead th.sortable:hover { color: var(--ink); }
+table.data tbody tr:hover { background: var(--surface-2); }
+table.data tbody tr.is-picked { background: var(--navy-soft); }
+table.data td.num, table.data th.num {
+  text-align: right; font-family: var(--font-num);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.fund-name { font-weight: 600; color: var(--ink); }
+.fund-meta { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+
+.pill {
+  display: inline-block; padding: 1px 7px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; letter-spacing: .02em;
+  border: 1px solid var(--rule-strong); color: var(--ink-2); background: var(--surface-2);
+  white-space: nowrap;
+}
+.pill--rr1, .pill--rr2 { color: #0d6b4b; border-color: #9ecfba; background: #eaf6f0; }
+.pill--rr3 { color: #8a5d05; border-color: #e2c489; background: #fdf3e0; }
+.pill--rr4 { color: #a4491b; border-color: #edb191; background: #fdece2; }
+.pill--rr5 { color: #93231f; border-color: #e8a3a0; background: #fdeceb; }
+:root[data-theme="dark"] .pill--rr1, :root[data-theme="dark"] .pill--rr2 { color:#5fc79a; border-color:#1f4736; background:#12241c; }
+:root[data-theme="dark"] .pill--rr3 { color:#d6ac5c; border-color:#4a3d1d; background:#241e10; }
+:root[data-theme="dark"] .pill--rr4 { color:#e08b5f; border-color:#4d3123; background:#251912; }
+:root[data-theme="dark"] .pill--rr5 { color:#e2635f; border-color:#4d2523; background:#251312; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .pill--rr1, :root:not([data-theme="light"]) .pill--rr2 { color:#5fc79a; border-color:#1f4736; background:#12241c; }
+  :root:not([data-theme="light"]) .pill--rr3 { color:#d6ac5c; border-color:#4a3d1d; background:#241e10; }
+  :root:not([data-theme="light"]) .pill--rr4 { color:#e08b5f; border-color:#4d3123; background:#251912; }
+  :root:not([data-theme="light"]) .pill--rr5 { color:#e2635f; border-color:#4d2523; background:#251312; }
+}
+
+.holdings-inline { font-size: 12.5px; color: var(--ink-2); line-height: 1.7; }
+.holdings-inline b { font-family: var(--font-num); font-weight: 600; color: var(--ink); }
+.holdings-inline .as-of { color: var(--ink-3); }
+
+.val-up { color: var(--up); }
+.val-down { color: var(--down); }
+.muted { color: var(--ink-3); }
+.nowrap { white-space: nowrap; }
+.assumed { border-bottom: 1px dotted var(--brass); cursor: help; }
+
+/* ------------------------------------------------------------ 配置試算 --- */
+
+.layout-2col { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; }
+@media (max-width: 1080px) { .layout-2col { grid-template-columns: minmax(0, 1fr); } }
+
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
+
+.alloc-row { display: grid; grid-template-columns: minmax(0,1fr) 96px 120px 34px; gap: 10px; align-items: center;
+  padding: 11px 0; border-bottom: 1px solid var(--rule); }
+.alloc-row:last-child { border-bottom: 0; }
+.alloc-row__name { min-width: 0; }
+.alloc-row__name .fund-name { font-size: 13.5px; }
+.alloc-swatch { width: 9px; height: 9px; border-radius: 2px; display: inline-block; margin-right: 6px; flex: none; }
+.alloc-amt { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; color: var(--ink-2); }
+@media (max-width: 620px) {
+  .alloc-row { grid-template-columns: minmax(0,1fr) 80px 34px; }
+  .alloc-amt { grid-column: 1 / -1; text-align: left; }
+}
+
+.empty {
+  padding: 40px 20px; text-align: center; color: var(--ink-3); font-size: 14px;
+  border: 1px dashed var(--rule-strong); border-radius: var(--r-md);
+}
+
+.total-bar {
+  display: flex; align-items: center; gap: 12px; padding: 12px 0 0;
+  border-top: 2px solid var(--rule-strong); margin-top: 6px; font-weight: 700;
+}
+.total-bar .num { font-family: var(--font-num); font-variant-numeric: tabular-nums; margin-left: auto; }
+.total-bar.is-off { color: var(--up); }
+
+/* KPI */
+/* 欄寬必須容得下 NT$ 24,242,954 這種長度，否則數字會被裁掉 */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.kpi {
+  background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r-md);
+  padding: 14px 16px;
+}
+.kpi__label { font-size: 12px; color: var(--ink-2); font-weight: 600; letter-spacing: .03em; }
+.kpi__value {
+  font-size: clamp(17px, 1.7vw, 21px); font-weight: 700; color: var(--navy-deep); margin-top: 4px;
+  letter-spacing: -.02em; white-space: nowrap;
+}
+.kpi__value small { font-size: 12px; font-weight: 600; color: var(--ink-3); margin-right: 3px; }
+.kpi__foot { font-size: 11.5px; color: var(--ink-3); margin-top: 3px; }
+.kpi--accent { border-left: 3px solid var(--brass); }
+
+/* 圖表 */
+.chart-stack { display: flex; flex-direction: column; gap: 16px; }
+.chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.chart-grid--donuts { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.chart-box { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r-md); padding: 14px; }
+.chart-box h4 { font-size: 13.5px; color: var(--ink); margin-bottom: 2px; }
+.chart-box .chart-sub { font-size: 11.5px; color: var(--ink-3); margin-bottom: 10px; }
+.chart-svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 12px; color: var(--ink-2); }
+.legend__item { display: inline-flex; align-items: center; gap: 6px; }
+.legend__dot { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+.legend__val { font-family: var(--font-num); font-variant-numeric: tabular-nums; color: var(--ink-3); }
+
+.chart-tip {
+  position: fixed; z-index: 90; pointer-events: none; opacity: 0;
+  background: var(--surface); border: 1px solid var(--rule-strong); border-radius: var(--r-md);
+  box-shadow: var(--shadow); padding: 8px 11px; font-size: 12.5px; color: var(--ink);
+  max-width: 260px; transition: opacity .1s;
+}
+.chart-tip b { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.chart-tip .tip-title { font-weight: 700; margin-bottom: 3px; color: var(--navy-deep); }
+
+/* ------------------------------------------------------------- 提示條 ---- */
+
+.notice {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: var(--brass-soft); border: 1px solid var(--brass);
+  border-radius: var(--r-md); padding: 11px 14px; font-size: 13px; color: var(--ink);
+  line-height: 1.6;
+}
+.notice__mark { color: var(--brass); font-weight: 700; flex: none; }
+.notice--info { background: var(--navy-soft); border-color: var(--navy-line); }
+.notice--info .notice__mark { color: var(--navy); }
+
+.status-line { font-size: 12.5px; color: var(--ink-2); min-height: 20px; }
+
+/* ------------------------------------------------------------ 資料維護 --- */
+
+.data-table input.input { padding: 5px 7px; font-size: 12.5px; }
+.data-table td { padding: 6px 8px; }
+.w-nav  { width: 104px; } .w-date { width: 132px; }
+.w-pct  { width: 72px; }  .w-rr { width: 62px; }
+
+/* ---------------------------------------------------------- 建議書預覽 --- */
+
+.sheet-stage { background: var(--surface-3); padding: 22px; border-radius: var(--r-lg); overflow-x: auto; }
+.sheet-stage .sheet { margin: 0 auto 22px; }
+.sheet-stage .sheet:last-child { margin-bottom: 0; }
+
+</style>
+<style>
+/* ==== assets/print.css ==== */
+/* =============================================================================
+   A4 文件樣式 — 建議書與比較表
+   .sheet 模擬紙張，因此固定使用淺色調（不隨深色模式反轉），
+   螢幕預覽與列印輸出共用同一份規則，所見即所得。
+   ========================================================================== */
+
+.sheet {
+  /* 紙張自帶一組固定色票，與介面 token 脫鉤 */
+  --p-ink:      #14181C;
+  --p-ink-2:    #4A5058;
+  --p-ink-3:    #7A828A;
+  --p-rule:     #D9DCD8;
+  --p-rule-2:   #B9BDB8;
+  --p-navy:     #1C4470;
+  --p-navy-deep:#0E2338;
+  --p-navy-soft:#EDF2F8;
+  --p-brass:    #A87D2B;
+  --p-surface:  #FFFFFF;
+  --p-surface-2:#F7F8F5;
+  --p-up:       #C02B2B;
+  --p-down:     #12764C;
+
+  /* 紙張永遠是白的：圖表角色色與系列色在此固定為淺色版本，
+     不隨介面深色模式反轉，否則列印會拿到深色系列色。 */
+  --c-surface: #FFFFFF;
+  --c-grid:    #E7E9E5;
+  --c-axis:    #B9BDB8;
+  --c-ink:     #14181C;
+  --c-ink-2:   #4A5058;
+  --c-ink-3:   #7A828A;
+  --series-1: #2a78d6;  --series-2: #eb6834;  --series-3: #1baf7a;  --series-4: #eda100;
+  --series-5: #e87ba4;  --series-6: #008300;  --series-7: #4a3aa7;  --series-8: #e34948;
+
+  width: 210mm;
+  min-height: 297mm;
+  padding: 13mm 15mm 11mm;
+  background: var(--p-surface);
+  color: var(--p-ink);
+  font-family: var(--font-ui);
+  font-size: 9.5pt;
+  line-height: 1.55;
+  box-shadow: 0 2px 10px rgba(14, 35, 56, .16);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.sheet__body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.sheet::before {
+  content: "";
+  position: absolute; inset: 0 0 auto 0; height: 4mm;
+  background: var(--p-navy);
+}
+
+/* ------------------------------------------------------------- 文件頁首 -- */
+
+.doc-header { border-bottom: 1.5px solid var(--p-ink); padding-bottom: 6px; margin-bottom: 3.2mm; }
+.doc-header__name {
+  font-family: var(--font-doc); font-size: 21pt; font-weight: 700;
+  color: var(--p-navy-deep); letter-spacing: .04em; line-height: 1.15;
+}
+.doc-header__row { display: flex; align-items: flex-end; gap: 16px; margin-top: 6px; }
+.doc-header__meta { font-size: 9pt; color: var(--p-ink-2); }
+.doc-header__meta b { color: var(--p-ink); font-weight: 700; }
+.doc-header__meta .sep { color: var(--p-rule-2); margin: 0 8px; }
+.doc-header__dates {
+  margin-left: auto; text-align: right; font-size: 8pt; color: var(--p-ink-3);
+  font-variant-numeric: tabular-nums; white-space: nowrap; line-height: 1.5;
+}
+
+/* ------------------------------------------------------------- 節次標題 -- */
+
+.doc-h {
+  display: flex; align-items: baseline; gap: 8px;
+  font-family: var(--font-doc); font-size: 12.5pt; color: var(--p-navy-deep);
+  margin: 0 0 2.5mm;
+}
+.doc-h__n {
+  font-family: var(--font-num); font-size: 10pt; font-weight: 700;
+  color: var(--p-brass); letter-spacing: .02em;
+}
+.doc-h__note { margin-left: auto; font-family: var(--font-ui); font-size: 8pt; color: var(--p-ink-3); font-weight: 400; }
+
+.doc-block { margin-bottom: 3.6mm; }
+.doc-block--tight { margin-bottom: 3.5mm; }
+
+/* ------------------------------------------------------- 總覽與成效卡 ---- */
+
+.ov-grid { display: grid; grid-template-columns: 1.15fr 2.4fr; gap: 4mm; align-items: stretch; }
+.ov-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; }
+
+.pcard {
+  border: 1px solid var(--p-rule); border-radius: 3px;
+  padding: 2.6mm 3.2mm; background: var(--p-surface-2);
+  display: flex; flex-direction: column; justify-content: center;
+}
+.pcard__label { font-size: 7.5pt; color: var(--p-ink-3); font-weight: 700; letter-spacing: .06em; }
+.pcard__plan { font-family: var(--font-doc); font-size: 14pt; color: var(--p-navy-deep); font-weight: 700; margin: 1mm 0 2mm; }
+.pcard__amt { font-size: 13pt; font-weight: 700; color: var(--p-ink); font-variant-numeric: tabular-nums; }
+.pcard__amt small { font-size: 8pt; color: var(--p-ink-3); margin-right: 2px; }
+
+.pstat { text-align: center; border: 1px solid var(--p-rule); border-radius: 3px; padding: 2.4mm 2mm; background: var(--p-surface); }
+.pstat__label { font-size: 8pt; color: var(--p-ink-2); font-weight: 700; }
+.pstat__value {
+  font-size: 13.5pt; font-weight: 700; color: var(--p-navy); margin-top: 1.2mm;
+  font-variant-numeric: tabular-nums; letter-spacing: -.01em;
+}
+.pstat__value small { font-size: 8.5pt; color: var(--p-ink-3); margin-right: 2px; font-weight: 600; }
+.pstat__foot { font-size: 7pt; color: var(--p-ink-3); margin-top: .8mm; }
+.pstat--key { border-color: var(--p-brass); border-top: 2px solid var(--p-brass); }
+.pstat--key .pstat__value { color: var(--p-navy-deep); }
+
+/* ---------------------------------------------------------- 文件用表格 --- */
+
+table.ptable { width: 100%; border-collapse: collapse; font-size: 8.4pt; }
+table.ptable th {
+  background: var(--p-surface-2); color: var(--p-ink-2);
+  font-size: 7.5pt; font-weight: 700; letter-spacing: .04em;
+  text-align: left; padding: 1.5mm 2.2mm; border-bottom: 1.2px solid var(--p-rule-2);
+  border-top: 1.2px solid var(--p-rule-2);
+}
+table.ptable td { padding: 1.5mm 2.2mm; border-bottom: 1px solid var(--p-rule); vertical-align: middle; }
+table.ptable tbody tr:last-child td { border-bottom: 1.2px solid var(--p-rule-2); }
+table.ptable .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.ptable .name { font-weight: 700; }
+table.ptable tfoot td {
+  font-weight: 700; padding: 1.5mm 2.2mm; border-bottom: 0;
+  background: var(--p-navy-soft);
+}
+.ptag {
+  display: inline-block; padding: .3mm 1.6mm; border-radius: 2px; font-size: 7.5pt;
+  border: 1px solid var(--p-rule-2); color: var(--p-ink-2); background: var(--p-surface-2);
+  white-space: nowrap;
+}
+.pswatch { display: inline-block; width: 2.6mm; height: 2.6mm; border-radius: 1px; margin-right: 1.6mm; vertical-align: baseline; }
+
+/* --------------------------------------------------------------- 圖表 ---- */
+
+.pchart-grid { display: grid; gap: 3mm; }
+.pchart-grid--2 { grid-template-columns: 1fr 1fr; }
+.pchart-grid--3 { grid-template-columns: repeat(3, 1fr); }
+
+.pchart { border: 1px solid var(--p-rule); border-radius: 3px; padding: 2mm 2.4mm 2.2mm; background: var(--p-surface); }
+.pchart__title { font-size: 8.5pt; font-weight: 700; color: var(--p-ink); text-align: center; }
+.pchart__sub { font-size: 6.6pt; color: var(--p-ink-3); text-align: center; margin-bottom: 1mm; }
+.pchart .legend { font-size: 6.4pt; color: var(--p-ink-2); justify-content: center; gap: 2px 7px; margin-top: 1mm; }
+.pchart .legend__val { color: var(--p-ink-3); }
+
+/* ------------------------------------------------------------ 持倉附錄 --- */
+
+.hold-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+.hold-card { border: 1px solid var(--p-rule); border-radius: 3px; overflow: hidden; break-inside: avoid; }
+.hold-card__head { background: var(--p-navy-deep); color: #fff; padding: 2.2mm 3mm; }
+.hold-card__head h4 { font-size: 9pt; line-height: 1.35; }
+.hold-card__head .sub { font-size: 7pt; opacity: .78; margin-top: .6mm; font-variant-numeric: tabular-nums; }
+.hold-card table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+.hold-card th { background: var(--p-surface-2); color: var(--p-ink-3); font-size: 7.5pt; text-align: left; padding: 1.4mm 3mm; font-weight: 700; }
+.hold-card td { padding: 1.6mm 3mm; border-top: 1px solid var(--p-rule); }
+.hold-card td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--p-navy); }
+
+/* ------------------------------------------------------------ 風險警語 --- */
+
+.disclaimer { margin-top: auto; padding-top: 2.6mm; border-top: 1px solid var(--p-rule); }
+.disclaimer h5 { font-size: 8pt; color: var(--p-ink); letter-spacing: .04em; margin-bottom: 1.2mm; }
+.disclaimer ol { margin: 0; padding-left: 4mm; font-size: 6.4pt; color: var(--p-ink-2); line-height: 1.45; }
+.disclaimer li { margin-bottom: .6mm; }
+.disclaimer b { color: var(--p-ink); }
+
+.sheet__foot {
+  margin-top: 2mm; padding-top: 1.6mm; border-top: 1px solid var(--p-rule);
+  display: flex; gap: 12px; font-size: 7pt; color: var(--p-ink-3);
+}
+.sheet__foot .pageno { margin-left: auto; font-variant-numeric: tabular-nums; }
+
+/* ---------------------------------------------------------- 比較表版面 --- */
+
+.cmp-head { border-bottom: 1.5px solid var(--p-ink); padding-bottom: 5px; margin-bottom: 4mm;
+  display: flex; align-items: flex-end; gap: 12px; }
+.cmp-head__title { font-family: var(--font-doc); font-size: 16pt; color: var(--p-navy-deep); font-weight: 700; }
+.cmp-head__sub { font-size: 8.5pt; color: var(--p-ink-2); margin-top: 1mm; }
+.cmp-head__no { margin-left: auto; font-family: var(--font-num); font-size: 14pt; color: var(--p-brass); font-weight: 700; }
+
+table.cmp { width: 100%; border-collapse: collapse; font-size: 8.5pt; table-layout: fixed; }
+table.cmp th {
+  background: var(--p-navy-deep); color: #fff; font-size: 7.5pt; font-weight: 700;
+  text-align: left; padding: 2mm 2.2mm; letter-spacing: .03em;
+}
+table.cmp td { padding: 4mm 2.2mm; border-bottom: 1px solid var(--p-rule); vertical-align: top; }
+table.cmp tbody tr:nth-child(even) { background: var(--p-surface-2); }
+table.cmp .c-name { font-weight: 700; font-size: 8.8pt; color: var(--p-navy-deep); }
+table.cmp .c-sub { font-size: 7pt; color: var(--p-ink-3); margin-top: .6mm; }
+table.cmp .c-nav { font-variant-numeric: tabular-nums; font-weight: 700; }
+table.cmp .c-hold { font-size: 7.6pt; color: var(--p-ink-2); line-height: 1.5; }
+table.cmp .c-hold b { font-weight: 700; color: var(--p-ink); font-variant-numeric: tabular-nums; }
+
+.cmp-note { margin-top: 3mm; font-size: 7.5pt; color: var(--p-ink-2); background: var(--p-navy-soft);
+  border-left: 2px solid var(--p-navy); padding: 2mm 3mm; }
+
+/* --------------------------------------------------------------- 列印 ---- */
+
+/* 移到畫面外而不是 display:none —— 隱藏的元素量不到高度，
+   自動縮放就無法在列印前算出正確比例。 */
+#printRoot {
+  position: absolute; left: -20000px; top: 0;
+  width: 210mm; visibility: hidden;
+}
+
+@page { size: A4; margin: 0; }
+
+@media print {
+  html, body { background: #fff !important; margin: 0; padding: 0; }
+  body > *:not(#printRoot) { display: none !important; }
+
+  #printRoot {
+    display: block !important;
+    position: static; left: auto; width: auto; visibility: visible;
+  }
+  #printRoot .sheet {
+    box-shadow: none;
+    margin: 0;
+    break-after: page;
+    page-break-after: always;
+  }
+  #printRoot .sheet:last-child { break-after: auto; page-break-after: auto; }
+
+  .sheet, .sheet * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .hold-card, .pchart, .pstat, tr { break-inside: avoid; page-break-inside: avoid; }
+}
+
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar__inner">
+    <div class="brand">
+      <span class="brand__mark">基金配置建議書</span>
+      <span class="brand__sub">比較 · 試算 · 輸出 PDF</span>
+    </div>
+
+    <nav class="tabs" role="tablist" aria-label="功能分頁">
+      <button class="tab" role="tab" data-tab="compare"  aria-selected="true"  aria-controls="panel-compare">基金比較</button>
+      <button class="tab" role="tab" data-tab="allocate" aria-selected="false" aria-controls="panel-allocate">配置試算</button>
+      <button class="tab" role="tab" data-tab="report"   aria-selected="false" aria-controls="panel-report">建議書</button>
+      <button class="tab" role="tab" data-tab="data"     aria-selected="false" aria-controls="panel-data">資料維護</button>
+    </nav>
+
+    <button class="icon-btn" id="btnTheme" title="跟隨系統（點擊切換為深色）" aria-label="切換深淺色">◐</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ============================================================ 基金比較 -->
+  <section class="panel" id="panel-compare" role="tabpanel" aria-labelledby="tab-compare">
+    <div class="page-head">
+      <div>
+        <h2>基金比較</h2>
+        <p id="compareCount">—</p>
+      </div>
+      <div class="page-head__actions">
+        <button class="btn" id="btnPreviewCompare">預覽比較表 PDF</button>
+        <button class="btn btn--primary" id="btnPrintCompare">輸出比較表 PDF</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card__body" style="display:flex;flex-direction:column;gap:14px">
+        <div class="chips" id="catChips"></div>
+        <div class="toolbar">
+          <div class="field" style="flex:1;min-width:220px">
+            <label for="searchBox">搜尋基金名稱、投資方向或持股</label>
+            <input class="input" id="searchBox" type="search" placeholder="例如：台積電、月配、科技">
+          </div>
+          <div class="field">
+            <label for="rrFilter">風險等級</label>
+            <select class="select" id="rrFilter">
+              <option value="all">全部 RR</option>
+              <option value="2">RR2</option><option value="3">RR3</option>
+              <option value="4">RR4</option><option value="5">RR5</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="payoutFilter">現金流</label>
+            <select class="select" id="payoutFilter">
+              <option value="all">全部</option>
+              <option value="income">配息型</option>
+              <option value="accum">累積型</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__head">
+        <h3>表列基金</h3>
+        <span class="hint">點欄位標題可排序　·　報酬率標記 <b>*</b> 表示該年期無資料，已沿用較短年期</span>
+      </div>
+      <div class="table-scroll" style="max-height:70vh;overflow-y:auto">
+        <div id="compareTable"></div>
+      </div>
+    </div>
+
+    <div id="comparePreviewWrap" hidden style="margin-top:18px">
+      <div class="card">
+        <div class="card__head"><h3>比較表 PDF 預覽</h3><span class="hint">A4 直式，依分類分頁，每頁 3 檔</span></div>
+        <div class="card__body">
+          <div class="sheet-stage" id="comparePreview"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 配置試算 -->
+  <section class="panel" id="panel-allocate" role="tabpanel" hidden>
+    <div class="page-head">
+      <div>
+        <h2>配置試算</h2>
+        <p>調整比例即時重算配息與資產成長，結果直接反映到建議書。</p>
+      </div>
+    </div>
+
+    <div class="layout-2col">
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <div class="card">
+          <div class="card__head"><h3>配置標的</h3><span class="hint">比例可不滿 100%，系統會依相對比重換算</span></div>
+          <div class="card__body">
+            <div id="allocRows"></div>
+            <div class="total-bar" id="totalBar"></div>
+            <div class="toolbar" style="margin-top:14px">
+              <select class="select" id="quickAdd" style="flex:1;min-width:200px" aria-label="快速加入標的"></select>
+              <button class="btn" id="btnEqualize">平均分配</button>
+              <button class="btn" id="btnNormalize">調整為 100%</button>
+              <button class="btn btn--ghost" id="btnClearPlan">清空</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__head">
+            <h3>預估成效</h3>
+            <span class="hint">各年期採該年期年化報酬率推算，非單一固定報酬率</span>
+          </div>
+          <div class="card__body" style="display:flex;flex-direction:column;gap:16px">
+            <div class="kpi-grid" id="kpiRow"></div>
+            <div class="chart-stack" id="previewCharts"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <aside style="display:flex;flex-direction:column;gap:16px">
+        <div class="card">
+          <div class="card__head"><h3>建議書抬頭</h3></div>
+          <div class="card__body">
+            <div class="form-grid">
+              <div class="field">
+                <label for="planClient">客戶姓名</label>
+                <input class="input" id="planClient" type="text" placeholder="王大明">
+              </div>
+              <div class="field">
+                <label for="planAdvisor">承辦顧問</label>
+                <input class="input" id="planAdvisor" type="text" placeholder="李顧問">
+              </div>
+              <div class="field" style="grid-column:1/-1">
+                <label for="planName">投資方案名稱</label>
+                <input class="input" id="planName" type="text" placeholder="平衡型策略">
+              </div>
+              <div class="field" style="grid-column:1/-1">
+                <label for="planAmount">投資金額（NT$）</label>
+                <input class="input input--num" id="planAmount" type="number" min="0" step="100000">
+              </div>
+              <div class="field" style="grid-column:1/-1">
+                <label for="planFx">美元匯率（僅供換算參考）</label>
+                <input class="input input--num" id="planFx" type="number" min="0" step="0.01">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__head"><h3>配息處理方式</h3></div>
+          <div class="card__body" style="display:flex;flex-direction:column;gap:10px">
+            <label style="display:flex;gap:9px;align-items:flex-start;cursor:pointer">
+              <input type="radio" name="mode" value="total" style="margin-top:4px">
+              <span>
+                <b>配息再投入（總報酬）</b>
+                <span class="muted" style="display:block;font-size:12.5px">配息滾入本金，資產成長最快。與一般平台的績效表達方式一致。</span>
+              </span>
+            </label>
+            <label style="display:flex;gap:9px;align-items:flex-start;cursor:pointer">
+              <input type="radio" name="mode" value="payout" style="margin-top:4px">
+              <span>
+                <b>配息領出</b>
+                <span class="muted" style="display:block;font-size:12.5px">客戶每月實領現金，本金僅以「總報酬扣除配息率」成長，另計累計已領配息。</span>
+              </span>
+            </label>
+            <div class="notice notice--info" style="margin-top:4px">
+              <span class="notice__mark">i</span>
+              <span>客戶若真的按月把配息花掉，用「配息領出」才不會高估未來本金。</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============================================================== 建議書 -->
+  <section class="panel" id="panel-report" role="tabpanel" hidden>
+    <div class="page-head">
+      <div>
+        <h2>建議書</h2>
+        <p>A4 直式，所見即所得。輸出時請在列印視窗選擇「另存為 PDF」，邊界選「無」。</p>
+      </div>
+      <div class="page-head__actions">
+        <button class="btn" id="btnGoAllocate">回到配置試算</button>
+        <button class="btn btn--primary" id="btnPrintReport">輸出建議書 PDF</button>
+      </div>
+    </div>
+
+    <div class="sheet-stage" id="reportPreview"></div>
+  </section>
+
+  <!-- ============================================================ 資料維護 -->
+  <section class="panel" id="panel-data" role="tabpanel" hidden>
+    <div class="page-head">
+      <div>
+        <h2>資料維護</h2>
+        <p>所有修改自動存在這台電腦的瀏覽器裡，不會上傳到任何地方。</p>
+      </div>
+    </div>
+
+    <div class="notice" style="margin-bottom:16px">
+      <span class="notice__mark">！</span>
+      <span>
+        <b>淨值、RR 與前五大持股</b>取自 2026/08/10 版比較表，屬公告事實；
+        <b>年化配息率與各年期報酬率是預設假設值</b>，直接決定建議書上的月領息與資產預估。
+        提供給客戶前，請務必依最新月報或平台資料在本頁覆寫。
+      </span>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card__head"><h3>批次更新</h3><span class="hint">從 Excel 或平台複製後直接貼上，一行一檔</span></div>
+      <div class="card__body" style="display:flex;flex-direction:column;gap:12px">
+        <div class="form-grid">
+          <div class="field">
+            <label for="navAsOf">淨值資料基準日</label>
+            <input class="input" id="navAsOf" type="date">
+          </div>
+        </div>
+        <div class="field">
+          <label for="pasteBox">貼上更新（欄位順序：名稱或代碼、淨值、淨值日、年化配息率；用 Tab 或逗號分隔）</label>
+          <textarea class="input" id="pasteBox" rows="5" spellcheck="false"
+            placeholder="安聯收益成長 AMg7	8.8629	2026/08/11	9.5&#10;0050	102.85	2026/08/11	2.8&#10;QQQ	723.03	2026/08/11"></textarea>
+        </div>
+        <div class="toolbar">
+          <button class="btn btn--primary" id="btnApplyPaste">套用貼上的資料</button>
+          <button class="btn" id="btnExport">匯出備份 JSON</button>
+          <label class="btn" for="fileImport" style="margin:0">匯入備份 JSON</label>
+          <input type="file" id="fileImport" accept="application/json,.json" hidden>
+          <button class="btn btn--ghost" id="btnReset" style="margin-left:auto">回復預設值</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__head">
+        <h3>逐筆編輯</h3>
+        <span class="hint">套用「基金比較」分頁的篩選條件　·　空白代表無資料</span>
+      </div>
+      <div class="table-scroll" style="max-height:70vh;overflow-y:auto">
+        <div id="dataTable"></div>
+      </div>
+    </div>
+  </section>
+
+  <p class="status-line" id="statusLine" role="status" aria-live="polite" style="margin-top:16px"></p>
+</main>
+
+<!-- 列印時只有這個容器會出現在紙上 -->
+<div id="printRoot" aria-hidden="true"></div>
+
+<script>
+/* ==== assets/funds.js ==== */
+/* =============================================================================
+   基金資料庫（預設值）
+   -----------------------------------------------------------------------------
+   資料來源分兩類，請務必分開理解：
+
+   [A] 公告事實 — nav / navDate / rr / holdings / holdingsDate / direction
+       取自 2026/08/10 版「基金投資方向、RR值 與前五大持股」比較表。
+       淨值日多為 8/6–8/7（8/10 為週一，境外基金與美股尚未更新）。
+
+   [B] 試算假設 — yield（年化配息率）/ returns（各年期年化報酬率）
+       這兩欄是「假設值」，不是官方公告數字。它們直接決定建議書上的
+       預估月領息與未來資產預估，請在「資料維護」分頁依最新月報或
+       平台資料覆寫後再輸出給客戶。
+
+   欄位說明
+     id           唯一代碼（請勿重複）
+     name         完整名稱（顯示於建議書）
+     short        簡稱（顯示於圖表與表格）
+     cat          分類代碼，對應 CATEGORIES
+     currency     計價幣別 TWD / USD
+     nav          最新淨值；無法取得時填 null，介面會顯示「待平台核對」
+     navDate      淨值日期 YYYY-MM-DD
+     rr           風險報酬等級 1–5
+     assetClass   資產類別（用於資產類別圓餅圖）
+     region       投資區域（用於投資區域圓餅圖）
+     payout       配息頻率：月配 / 季配 / 半年配 / 年配 / 累積
+     yield        年化配息率 %（累積型填 0）          ← 假設值
+     direction    投資方向（一句話）
+     returns      各年期年化報酬率 %                   ← 假設值
+                  可只填部分年期，缺漏年期會沿用最長可得年期並在報告加註
+     holdings     前五大持股 [{ name, weight }]
+     holdingsDate 持股基準日 YYYY-MM-DD
+   ========================================================================== */
+
+window.CATEGORIES = [
+  { id: 'multi',    name: '多元資產收益',   note: '股債混合，現金流為主要訴求' },
+  { id: 'bond',     name: '債券與證券化',   note: '收益來自利息與信用利差' },
+  { id: 'eqinc',    name: '股票入息',       note: '收益來自股息與選擇權權利金' },
+  { id: 'tw-etf',   name: '台灣 ETF',       note: '被動追蹤指數' },
+  { id: 'us-etf',   name: '美國 ETF',       note: '被動追蹤指數' },
+  { id: 'tw-active',name: '台股主動',       note: '由經理人選股，非追蹤指數' },
+  { id: 'tech',     name: '科技與美國成長', note: '集中於半導體、軟體與雲端' },
+  { id: 'sector',   name: '全球產業主題',   note: '景氣敏感因子各不相同' },
+  { id: 'region',   name: '區域與生技',     note: '衛星曝險，波動較大' }
+];
+
+window.DEFAULT_META = {
+  navAsOf: '2026-08-10',
+  navNote: '淨值：截至 2026/08/10 最新可得公告｜持股：最近一期公開月報',
+  rrNote: 'RR 依台灣銷售平台常用分級；不同通路可能略有差異',
+  fxUSDTWD: 29.5
+};
+
+/* 安聯收益成長系列共用底層持股（同一檔基金的不同現金流級別） */
+var AGI_HOLDINGS = [
+  { name: 'NVIDIA CORP',        weight: 2.81 },
+  { name: 'APPLE INC',          weight: 2.44 },
+  { name: 'AMAZON.COM INC',     weight: 1.49 },
+  { name: 'ALPHABET INC-CL A',  weight: 1.36 },
+  { name: 'ALPHABET INC',       weight: 1.17 }
+];
+var AGI_RETURNS = { 1: 14.5, 3: 12.8, 5: 9.2, 7: 7.6, 10: 8.4 };
+
+window.DEFAULT_FUNDS = [
+  /* ---------- 多元資產收益 ---------- */
+  {
+    id: 'agi-amg7', name: '安聯收益成長基金-AMg7月收總收益類股(美元)', short: '安聯收益成長 AMg7',
+    cat: 'multi', currency: 'USD', nav: 8.8629, navDate: '2026-08-07', rr: 3,
+    assetClass: '多重資產', region: '美國', payout: '月配', yield: 9.50,
+    direction: '美國股債多元收益，以總收益方式配發',
+    returns: AGI_RETURNS, holdings: AGI_HOLDINGS, holdingsDate: '2026-06-30'
+  },
+  {
+    id: 'agi-am', name: '安聯收益成長基金-AM穩定月收類股(美元)', short: '安聯收益成長 AM',
+    cat: 'multi', currency: 'USD', nav: 8.6928, navDate: '2026-08-07', rr: 3,
+    assetClass: '多重資產', region: '美國', payout: '月配', yield: 6.70,
+    direction: '同一底層基金，配息較穩定、金額較低',
+    returns: AGI_RETURNS, holdings: AGI_HOLDINGS, holdingsDate: '2026-06-30'
+  },
+  {
+    id: 'agi-at', name: '安聯收益成長基金-AT累積類股(美元)', short: '安聯收益成長 AT',
+    cat: 'multi', currency: 'USD', nav: 31.19, navDate: '2026-08-07', rr: 3,
+    assetClass: '多重資產', region: '美國', payout: '累積', yield: 0,
+    direction: '同一底層基金，收益留在基金內滾入淨值',
+    returns: AGI_RETURNS, holdings: AGI_HOLDINGS, holdingsDate: '2026-06-30'
+  },
+  {
+    id: 'ftif-income', name: '富蘭克林穩定月收益基金 美元A(月配)', short: '富蘭克林穩定月收益',
+    cat: 'multi', currency: 'USD', nav: 9.98, navDate: '2026-08-07', rr: 3,
+    assetClass: '平衡型', region: '美國', payout: '月配', yield: 5.80,
+    direction: '美國平衡收益，公債與投資級債為底',
+    returns: { 1: 9.8, 3: 8.4, 5: 6.9, 7: 5.8, 10: 6.2 },
+    holdings: [
+      { name: '美國公債', weight: 6.57 }, { name: 'CHS', weight: 2.52 },
+      { name: 'Oracle', weight: 2.20 }, { name: 'GNMA', weight: 2.18 },
+      { name: 'Exxon', weight: 1.71 }
+    ], holdingsDate: '2026-05-31'
+  },
+  {
+    id: 'schroder-gig', name: '施羅德環球基金系列-環球收益成長 美元A月配固定2', short: '施羅德環球收益成長',
+    cat: 'multi', currency: 'USD', nav: 143.4558, navDate: '2026-08-06', rr: 3,
+    assetClass: '多重資產', region: '全球', payout: '月配', yield: 7.20,
+    direction: '全球股債收益，配息採固定金額機制',
+    returns: { 1: 10.2, 3: 9.1, 5: 6.4, 7: 5.5, 10: 5.9 },
+    holdings: [
+      { name: 'Alphabet Inc-CL A', weight: 1.00 }, { name: '巴西公債', weight: 0.90 },
+      { name: '匈牙利公債', weight: 0.90 }, { name: 'Goldman Sachs 債', weight: 0.80 },
+      { name: 'HD Korea 造船債', weight: 0.80 }
+    ], holdingsDate: '2026-04-30'
+  },
+  {
+    id: 'ab-agi-ai', name: '聯博美國成長入息基金 AI配息', short: '聯博美國成長入息 AI',
+    cat: 'multi', currency: 'USD', nav: 15.09, navDate: '2026-07-30', rr: 4,
+    assetClass: '股票', region: '美國', payout: '月配', yield: 6.50,
+    direction: '美國大型成長股搭配收益設計',
+    returns: { 1: 18.2, 3: 16.4, 5: 13.1, 7: 12.0, 10: 12.8 },
+    holdings: [
+      { name: 'Alphabet', weight: 8.66 }, { name: 'NVIDIA', weight: 8.26 },
+      { name: 'Broadcom', weight: 5.24 }, { name: 'Meta', weight: 4.18 },
+      { name: 'Microsoft', weight: 3.99 }
+    ], holdingsDate: '2026-06-30'
+  },
+  {
+    id: 'ab-growth-ap', name: '聯博美國成長基金 AP總報酬月配', short: '聯博美國成長 AP',
+    cat: 'multi', currency: 'USD', nav: 74.97, navDate: '2026-08-07', rr: 4,
+    assetClass: '股票', region: '美國', payout: '月配', yield: 6.00,
+    direction: '美國大型成長股，以總報酬方式月配',
+    returns: { 1: 19.5, 3: 17.8, 5: 14.2, 7: 13.5, 10: 14.6 },
+    holdings: [
+      { name: 'NVIDIA', weight: 9.93 }, { name: 'Alphabet', weight: 9.30 },
+      { name: 'Amazon', weight: 8.05 }, { name: 'Microsoft', weight: 6.66 },
+      { name: 'Broadcom', weight: 5.83 }
+    ], holdingsDate: '2026-04-30'
+  },
+
+  /* ---------- 債券與證券化 ---------- */
+  {
+    id: 'ab-mortgage', name: '聯博房貸收益基金 AA穩定月配', short: '聯博房貸收益 AA',
+    cat: 'bond', currency: 'USD', nav: 9.25, navDate: '2026-08-07', rr: 3,
+    assetClass: '債券', region: '美國', payout: '月配', yield: 6.20,
+    direction: '美國證券化信用，收益來自房貸利差',
+    returns: { 1: 7.4, 3: 5.6, 5: 2.8, 7: 2.4, 10: 2.9 },
+    holdings: [
+      { name: 'FHLM REMICS', weight: 2.12 }, { name: 'UMBS 5% TBA', weight: 1.38 },
+      { name: 'DeltaTerra', weight: 1.33 }, { name: 'UMBS 4.5% TBA', weight: 1.05 },
+      { name: 'FNMA REMICS', weight: 1.04 }
+    ], holdingsDate: '2026-06-30'
+  },
+  {
+    id: 'bnpp-corp', name: '法巴永續高評等企業債券基金 月配美元', short: '法巴永續高評等企業債',
+    cat: 'bond', currency: 'USD', nav: 68.35, navDate: '2026-08-06', rr: 2,
+    assetClass: '債券', region: '全球', payout: '月配', yield: 4.30,
+    direction: '投資級企業債，信用風險最低的一檔',
+    returns: { 1: 6.1, 3: 4.2, 5: 1.4, 7: 2.0, 10: 2.6 },
+    holdings: [
+      { name: 'WSP Global 債', weight: 1.06 }, { name: 'Verisk 債', weight: 0.92 },
+      { name: 'Citibank 債', weight: 0.89 }, { name: 'CRH America 債', weight: 0.73 },
+      { name: 'Omega Healthcare 債', weight: 0.72 }
+    ], holdingsDate: '2026-06-30'
+  },
+
+  /* ---------- 股票入息 ---------- */
+  {
+    id: 'blk-sdd-income', name: '貝萊德全球智慧數據股票入息基金 A6', short: '貝萊德智慧數據入息 A6',
+    cat: 'eqinc', currency: 'USD', nav: 10.01, navDate: '2026-08-07', rr: 4,
+    assetClass: '股票', region: '全球', payout: '月配', yield: 6.80,
+    direction: '全球量化選股入息，收益含選擇權策略',
+    returns: { 1: 13.6, 3: 12.2, 5: 11.0, 7: 8.4, 10: 8.1 },
+    holdings: [
+      { name: 'NVIDIA', weight: 4.26 }, { name: 'Alphabet', weight: 4.05 },
+      { name: 'Apple', weight: 3.98 }, { name: 'Cisco', weight: 2.38 },
+      { name: 'Accenture', weight: 2.23 }
+    ], holdingsDate: '2026-05-31'
+  },
+
+  /* ---------- 台灣 ETF ---------- */
+  {
+    id: 'tw-0050', name: '0050 元大台灣50', short: '0050 元大台灣50',
+    cat: 'tw-etf', currency: 'TWD', nav: 102.85, navDate: '2026-08-07', rr: 4,
+    assetClass: '股票', region: '台灣', payout: '季配', yield: 2.80,
+    direction: '臺灣 50 市值型，台積電權重過半',
+    returns: { 1: 22.4, 3: 19.6, 5: 15.8, 7: 14.2, 10: 13.1 },
+    holdings: [
+      { name: '台積電', weight: 58.64 }, { name: '聯發科', weight: 5.81 },
+      { name: '台達電', weight: 3.23 }, { name: '鴻海', weight: 3.22 },
+      { name: '日月光投控', weight: 1.96 }
+    ], holdingsDate: '2026-08-07'
+  },
+  {
+    id: 'tw-006208', name: '006208 富邦台50', short: '006208 富邦台50',
+    cat: 'tw-etf', currency: 'TWD', nav: 235.35, navDate: '2026-08-07', rr: 4,
+    assetClass: '股票', region: '台灣', payout: '季配', yield: 2.75,
+    direction: '與 0050 追蹤同一指數，差別在費用與規模',
+    returns: { 1: 22.3, 3: 19.5, 5: 15.7, 7: 14.1, 10: 13.0 },
+    holdings: [
+      { name: '台積電', weight: 58.58 }, { name: '聯發科', weight: 5.80 },
+      { name: '台達電', weight: 3.22 }, { name: '鴻海', weight: 3.21 },
+      { name: '日月光投控', weight: 1.96 }
+    ], holdingsDate: '2026-08-07'
+  },
+  {
+    id: 'tw-0056', name: '0056 元大高股息', short: '0056 元大高股息',
+    cat: 'tw-etf', currency: 'TWD', nav: 51.38, navDate: '2026-08-07', rr: 4,
+    assetClass: '股票', region: '台灣', payout: '季配', yield: 8.00,
+    direction: '高股息因子，不是純市值型',
+    returns: { 1: 12.4, 3: 14.8, 5: 11.2, 7: 9.6, 10: 8.8 },
+    holdings: [
+      { name: '南亞', weight: 6.63 }, { name: '華南金', weight: 4.22 },
+      { name: '南亞科', weight: 4.19 }, { name: '中信金', weight: 3.95 },
+      { name: '緯創', weight: 3.95 }
+    ], holdingsDate: '2026-08-07'
+  },
+
+  /* ---------- 美國 ETF ---------- */
+  {
+    id: 'us-qqq', name: 'QQQ 景順納斯達克100 ETF', short: 'QQQ', ticker: 'QQQ',
+    cat: 'us-etf', currency: 'USD', nav: 723.03, navDate: '2026-08-07', rr: 4,
+    assetClass: '股票', region: '美國', payout: '季配', yield: 0.55,
+    direction: 'Nasdaq-100，成長偏壓且不含金融股',
+    returns: { 1: 21.6, 3: 23.4, 5: 18.2, 7: 19.4, 10: 18.6 },
+    holdings: [
+      { name: 'NVIDIA', weight: 8.56 }, { name: 'Apple', weight: 7.27 },
+      { name: 'Microsoft', weight: 5.87 }, { name: 'Amazon', weight: 4.66 },
+      { name: 'Micron', weight: 4.31 }
+    ], holdingsDate: '2026-08-07'
+  },
+  {
+    id: 'us-spy', name: 'SPY 標普500 ETF', short: 'SPY', ticker: 'SPY',
+    cat: 'us-etf', currency: 'USD', nav: null, navDate: '2026-08-07', rr: 4,
+    assetClass: '股票', region: '美國', payout: '季配', yield: 1.20,
+    direction: 'S&P 500 市值型',
+    returns: { 1: 17.2, 3: 17.8, 5: 14.6, 7: 14.0, 10: 13.4 },
+    holdings: [
+      { name: 'NVIDIA', weight: 7.55 }, { name: 'Apple', weight: 7.04 },
+      { name: 'Microsoft', weight: 5.36 }, { name: 'Amazon', weight: 4.13 },
+      { name: 'Alphabet', weight: 3.02 }
+    ], holdingsDate: '2026-08-07'
+  },
+  {
+    id: 'us-ivv', name: 'IVV 安碩核心標普500 ETF', short: 'IVV', ticker: 'IVV',
+    cat: 'us-etf', currency: 'USD', nav: 777.04, navDate: '2026-08-07', rr: 4,
+    assetClass: '股票', region: '美國', payout: '季配', yield: 1.25,
+    direction: '與 SPY 同指數，費用率較低',
+    returns: { 1: 17.2, 3: 17.8, 5: 14.6, 7: 14.0, 10: 13.4 },
+    holdings: [
+      { name: 'Apple', weight: 7.64 }, { name: 'NVIDIA', weight: 7.37 },
+      { name: 'Microsoft', weight: 5.23 }, { name: 'Amazon', weight: 3.60 },
+      { name: 'Alphabet Inc-CL A', weight: 3.05 }
+    ], holdingsDate: '2026-08-07'
+  },
+
+  /* ---------- 台股主動 ---------- */
+  {
+    id: 'tw-00981a', name: '00981A 主動統一台股增長', short: '00981A 主動統一台股增長',
+    cat: 'tw-active', currency: 'TWD', nav: 28.03, navDate: '2026-08-07', rr: 5,
+    assetClass: '股票', region: '台灣', payout: '累積', yield: 0,
+    direction: '主動式 ETF，大型＋創新＋成長',
+    returns: { 1: 26.0 },
+    holdings: [
+      { name: '台積電', weight: 9.63 }, { name: '台光電', weight: 8.53 },
+      { name: '聯發科', weight: 7.11 }, { name: '欣興', weight: 6.46 },
+      { name: '台指期貨', weight: 5.75 }
+    ], holdingsDate: '2026-08-07'
+  },
+  {
+    id: 'fh-allweather', name: '復華全方位基金 A類型', short: '復華全方位 A',
+    cat: 'tw-active', currency: 'TWD', nav: 184.73, navDate: '2026-08-07', rr: 4,
+    assetClass: '股票', region: '台灣', payout: '累積', yield: 0,
+    direction: '台股全市場彈性配置',
+    returns: { 1: 23.5, 3: 18.9, 5: 16.4, 7: 14.8, 10: 13.6 },
+    holdings: [
+      { name: '國巨', weight: 9.46 }, { name: '欣興', weight: 7.05 },
+      { name: '聯發科', weight: 6.67 }, { name: '台光電', weight: 6.23 },
+      { name: '台積電', weight: 5.90 }
+    ], holdingsDate: '2026-06-30'
+  },
+  {
+    id: 'pst-blackhorse', name: '統一黑馬基金', short: '統一黑馬',
+    cat: 'tw-active', currency: 'TWD', nav: null, navDate: '2026-08-07', rr: 5,
+    assetClass: '股票', region: '台灣', payout: '累積', yield: 0,
+    direction: '台股集中精選',
+    returns: { 1: 25.8, 3: 20.4, 5: 18.2, 7: 16.0, 10: 14.9 },
+    holdings: [
+      { name: '台光電', weight: 7.35 }, { name: '台積電', weight: 6.10 },
+      { name: '國巨', weight: 5.65 }, { name: '聯電', weight: 5.58 },
+      { name: '奇鋐', weight: 5.47 }
+    ], holdingsDate: '2026-06-30'
+  },
+  {
+    id: 'agi-tw-tech', name: '安聯台灣科技基金', short: '安聯台灣科技',
+    cat: 'tw-active', currency: 'TWD', nav: 734.24, navDate: '2026-08-07', rr: 5,
+    assetClass: '股票', region: '台灣', payout: '累積', yield: 0,
+    direction: '台灣科技股，記憶體與測試介面權重高',
+    returns: { 1: 27.2, 3: 22.6, 5: 19.8, 7: 17.4, 10: 16.2 },
+    holdings: [
+      { name: '華邦電', weight: 7.44 }, { name: '旺矽', weight: 7.32 },
+      { name: '台積電', weight: 6.37 }, { name: '國巨', weight: 5.65 },
+      { name: '台燿', weight: 5.38 }
+    ], holdingsDate: '2026-06-30'
+  },
+  {
+    id: 'agi-tw-smart', name: '安聯台灣智慧基金', short: '安聯台灣智慧',
+    cat: 'tw-active', currency: 'TWD', nav: 394.91, navDate: '2026-08-07', rr: 5,
+    assetClass: '股票', region: '台灣', payout: '累積', yield: 0,
+    direction: '台灣趨勢成長',
+    returns: { 1: 26.4, 3: 21.8, 5: 19.1, 7: 16.8, 10: 15.6 },
+    holdings: [
+      { name: '旺矽', weight: 8.28 }, { name: '華邦電', weight: 7.46 },
+      { name: '台光電', weight: 6.28 }, { name: '信驊', weight: 5.86 },
+      { name: '台燿', weight: 5.72 }
+    ], holdingsDate: '2026-06-30'
+  },
+  {
+    id: 'agi-tw-dam', name: '安聯台灣大壩基金-A累積型(台幣)', short: '安聯台灣大壩 A累積',
+    cat: 'tw-active', currency: 'TWD', nav: null, navDate: '2026-08-07', rr: 4,
+    assetClass: '股票', region: '台灣', payout: '累積', yield: 0,
+    direction: '台股全市場主動選股',
+    returns: { 1: 25.1, 3: 20.2, 5: 18.4, 7: 16.2, 10: 15.1 },
+    holdings: [
+      { name: '旺矽', weight: 12.17 }, { name: '台燿', weight: 7.19 },
+      { name: '穎崴', weight: 7.11 }, { name: '台光電', weight: 6.65 },
+      { name: '台積電', weight: 5.20 }
+    ], holdingsDate: '2026-06-30'
+  },
+  {
+    id: 'nomura-logistics', name: '野村台灣運籌基金', short: '野村台灣運籌',
+    cat: 'tw-active', currency: 'TWD', nav: 437.74, navDate: '2026-08-07', rr: 4,
+    assetClass: '股票', region: '台灣', payout: '累積', yield: 0,
+    direction: '台灣科技供應鏈',
+    returns: { 1: 24.2, 3: 19.4, 5: 17.2, 7: 15.1, 10: 14.0 },
+    holdings: [
+      { name: '台光電', weight: 7.47 }, { name: '聯發科', weight: 7.31 },
+      { name: '欣興', weight: 6.12 }, { name: '台積電', weight: 5.75 },
+      { name: '川湖', weight: 5.56 }
+    ], holdingsDate: '2026-06-30'
+  },
+  {
+    id: 'pst-benteng', name: '統一奔騰基金', short: '統一奔騰',
+    cat: 'tw-active', currency: 'TWD', nav: 713.30, navDate: '2026-08-07', rr: 5,
+    assetClass: '股票', region: '台灣', payout: '累積', yield: 0,
+    direction: '台股成長選股',
+    returns: { 1: 26.8, 3: 21.2, 5: 18.9, 7: 16.5, 10: 15.4 },
+    holdings: [
+      { name: '台光電', weight: 9.25 }, { name: '國巨', weight: 9.12 },
+      { name: '台積電', weight: 7.81 }, { name: '欣興', weight: 7.60 },
+      { name: '旺矽', weight: 6.99 }
+    ], holdingsDate: '2026-06-30'
+  },
+  {
+    id: 'nomura-quality', name: '野村優質基金 累積', short: '野村優質 累積',
+    cat: 'tw-active', currency: 'TWD', nav: 452.00, navDate: '2026-08-07', rr: 4,
+    assetClass: '股票', region: '台灣', payout: '累積', yield: 0,
+    direction: '台灣品質成長選股',
+    returns: { 1: 23.8, 3: 19.0, 5: 16.8, 7: 14.9, 10: 13.8 },
+    holdings: [
+      { name: '川湖', weight: 10.06 }, { name: '台光電', weight: 9.71 },
+      { name: '台積電', weight: 8.61 }, { name: '鴻勁', weight: 7.67 },
+      { name: '健策', weight: 7.23 }
+    ], holdingsDate: '2026-06-30'
+  },
+  {
+    id: 'nomura-smallcap', name: '野村中小基金 累積', short: '野村中小 累積',
+    cat: 'tw-active', currency: 'TWD', nav: 567.06, navDate: '2026-08-07', rr: 5,
+    assetClass: '股票', region: '台灣', payout: '累積', yield: 0,
+    direction: '台灣中小型成長，個股與流動性風險較高',
+    returns: { 1: 25.4, 3: 20.8, 5: 18.6, 7: 16.4, 10: 15.2 },
+    holdings: [
+      { name: '川湖', weight: 9.18 }, { name: '台光電', weight: 8.38 },
+      { name: '聯發科', weight: 6.10 }, { name: '健策', weight: 5.88 },
+      { name: '欣興', weight: 5.75 }
+    ], holdingsDate: '2026-06-30'
+  },
+
+  /* ---------- 科技與美國成長 ---------- */
+  {
+    id: 'blk-wtech-a2', name: '貝萊德世界科技基金 A2累積(美元)', short: '貝萊德世界科技 A2',
+    cat: 'tech', currency: 'USD', nav: 144.63, navDate: '2026-08-07', rr: 5,
+    assetClass: '股票', region: '全球', payout: '累積', yield: 0,
+    direction: '全球科技股，含韓國記憶體與設備',
+    returns: { 1: 24.6, 3: 22.4, 5: 16.8, 7: 18.2, 10: 17.4 },
+    holdings: [
+      { name: 'SK 海力士', weight: 6.79 }, { name: 'NVIDIA', weight: 6.69 },
+      { name: 'Broadcom', weight: 5.70 }, { name: 'Samsung', weight: 5.49 },
+      { name: 'Lam Research', weight: 5.23 }
+    ], holdingsDate: '2026-06-30'
+  },
+  {
+    id: 'blk-wtech-a10', name: '貝萊德世界科技基金 A10月配(美元)', short: '貝萊德世界科技 A10',
+    cat: 'tech', currency: 'USD', nav: 20.70, navDate: '2026-08-07', rr: 5,
+    assetClass: '股票', region: '全球', payout: '月配', yield: 6.00,
+    direction: '同 A2 底層，改以固定比率月配',
+    returns: { 1: 24.6, 3: 22.4, 5: 16.8, 7: 18.2, 10: 17.4 },
+    holdings: [
+      { name: 'SK 海力士', weight: 6.79 }, { name: 'NVIDIA', weight: 6.69 },
+      { name: 'Broadcom', weight: 5.70 }, { name: 'Samsung', weight: 5.49 },
+      { name: 'Lam Research', weight: 5.23 }
+    ], holdingsDate: '2026-06-30'
+  },
+  {
+    id: 'jpm-us-tech', name: '摩根美國科技基金 A美元累計', short: '摩根美國科技 A累計',
+    cat: 'tech', currency: 'USD', nav: 147.16, navDate: '2026-08-06', rr: 4,
+    assetClass: '股票', region: '美國', payout: '累積', yield: 0,
+    direction: '美國科技主動選股',
+    returns: { 1: 20.8, 3: 19.6, 5: 14.4, 7: 16.2, 10: 16.8 },
+    holdings: [
+      { name: 'Intel', weight: 5.20 }, { name: 'Lam Research', weight: 5.00 },
+      { name: 'Alphabet', weight: 3.90 }, { name: 'AMD', weight: 3.70 },
+      { name: 'Palo Alto', weight: 3.60 }
+    ], holdingsDate: '2026-06-30'
+  },
+  {
+    id: 'trp-uslcg', name: '普徠仕美國大型成長股票基金 A美元', short: '普徠仕美國大型成長 A',
+    cat: 'tech', currency: 'USD', nav: 119.11, navDate: '2026-08-06', rr: 4,
+    assetClass: '股票', region: '美國', payout: '累積', yield: 0,
+    direction: '美國大型成長，前五大權重集中',
+    returns: { 1: 19.4, 3: 20.2, 5: 14.8, 7: 15.6, 10: 15.9 },
+    holdings: [
+      { name: 'Apple', weight: 9.60 }, { name: 'Microsoft', weight: 9.40 },
+      { name: 'NVIDIA', weight: 9.20 }, { name: 'Alphabet', weight: 8.60 },
+      { name: 'Broadcom', weight: 4.80 }
+    ], holdingsDate: '2026-05-31'
+  },
+
+  /* ---------- 全球產業主題 ---------- */
+  {
+    id: 'blk-wfin-a10', name: '貝萊德世界金融基金 A10(美元)', short: '貝萊德世界金融 A10',
+    cat: 'sector', currency: 'USD', nav: 20.28, navDate: '2026-08-07', rr: 5,
+    assetClass: '股票', region: '全球', payout: '月配', yield: 5.40,
+    direction: '全球金融股，對利率與信用循環敏感',
+    returns: { 1: 22.6, 3: 18.4, 5: 14.2, 7: 9.8, 10: 9.4 },
+    holdings: [
+      { name: 'Bank of America', weight: 6.55 }, { name: 'Citigroup', weight: 5.43 },
+      { name: 'UBS', weight: 3.31 }, { name: 'Capital One', weight: 3.16 },
+      { name: 'BNP Paribas', weight: 3.06 }
+    ], holdingsDate: '2026-05-31'
+  },
+  {
+    id: 'cl-infra', name: '美盛凱利基礎建設價值基金 A美元配息(M)避險', short: '美盛凱利基礎建設 A配息M',
+    cat: 'sector', currency: 'USD', nav: 12.31, navDate: '2026-08-07', rr: 4,
+    assetClass: '股票', region: '全球', payout: '月配', yield: 5.60,
+    direction: '全球上市基建，公用事業與運輸為主',
+    returns: { 1: 11.2, 3: 6.8, 5: 6.2, 7: 5.4, 10: 6.0 },
+    holdings: [
+      { name: 'Entergy', weight: 5.05 }, { name: 'RWE', weight: 4.95 },
+      { name: 'Severn Trent', weight: 4.70 }, { name: 'TC Energy', weight: 4.49 },
+      { name: 'Canadian National Railway', weight: 4.23 }
+    ], holdingsDate: '2026-06-30'
+  },
+  {
+    id: 'blk-gold-a2', name: '貝萊德世界黃金基金 A2', short: '貝萊德世界黃金 A2',
+    cat: 'sector', currency: 'USD', nav: 104.49, navDate: '2026-08-07', rr: 5,
+    assetClass: '股票', region: '全球', payout: '累積', yield: 0,
+    direction: '全球黃金礦業股，非直接持有黃金',
+    returns: { 1: 38.4, 3: 22.6, 5: 8.4, 7: 11.2, 10: 9.6 },
+    holdings: [
+      { name: 'Barrick', weight: 8.20 }, { name: 'Newmont', weight: 6.73 },
+      { name: 'AngloGold', weight: 6.61 }, { name: 'Wheaton', weight: 5.89 },
+      { name: 'Endeavour', weight: 4.95 }
+    ], holdingsDate: '2026-05-31'
+  },
+
+  /* ---------- 區域與生技 ---------- */
+  {
+    id: 'jpm-korea', name: '摩根南韓基金', short: '摩根南韓',
+    cat: 'region', currency: 'USD', nav: null, navDate: '2026-08-07', rr: 5,
+    assetClass: '股票', region: '南韓', payout: '累積', yield: 0,
+    direction: '南韓單一市場，前三大占比近三成',
+    returns: { 1: 29.6, 3: 12.4, 5: 6.8, 7: 8.2, 10: 7.4 },
+    holdings: [
+      { name: 'Samsung Elec', weight: 10.20 }, { name: 'SK hynix', weight: 10.00 },
+      { name: 'SK Square', weight: 8.80 }, { name: 'Samsung Electro', weight: 6.30 },
+      { name: 'Samsung C&T', weight: 5.00 }
+    ], holdingsDate: '2026-06-30'
+  },
+  {
+    id: 'jh-life-sci', name: '駿利亨德森環球生命科技基金 A2', short: '駿利環球生命科技 A2',
+    cat: 'region', currency: 'USD', nav: 69.30, navDate: '2026-08-07', rr: 4,
+    assetClass: '股票', region: '全球', payout: '累積', yield: 0,
+    direction: '全球生命科技，與科技股循環不同步',
+    returns: { 1: 8.6, 3: 4.2, 5: 2.4, 7: 5.8, 10: 7.2 },
+    holdings: [
+      { name: 'Eli Lilly', weight: 9.68 }, { name: 'J&J', weight: 6.76 },
+      { name: 'UnitedHealth', weight: 4.21 }, { name: 'AstraZeneca', weight: 4.19 },
+      { name: 'AbbVie', weight: 3.94 }
+    ], holdingsDate: '2026-05-31'
+  }
+];
+
+</script>
+<script>
+/* ==== assets/charts.js ==== */
+/* =============================================================================
+   圖表引擎 — 純 SVG，無外部相依
+   -----------------------------------------------------------------------------
+   顏色一律透過 CSS 變數取得，因此同一份程式碼在深色介面與白紙列印下
+   都會拿到正確的色票：
+     --c-surface / --c-grid / --c-axis / --c-ink / --c-ink-2 / --c-ink-3
+     --series-1 … --series-8
+   ========================================================================== */
+
+(function () {
+  'use strict';
+
+  var NS = 'http://www.w3.org/2000/svg';
+  var tip = null;
+
+  function el(name, attrs, parent) {
+    var n = document.createElementNS(NS, name);
+    for (var k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+
+  function ensureTip() {
+    if (tip && document.body.contains(tip)) return tip;
+    tip = document.createElement('div');
+    tip.className = 'chart-tip';
+    tip.setAttribute('role', 'status');
+    document.body.appendChild(tip);
+    return tip;
+  }
+
+  function showTip(html, evt) {
+    var t = ensureTip();
+    t.innerHTML = html;
+    t.style.opacity = '1';
+    var pad = 14;
+    var r = t.getBoundingClientRect();
+    var x = evt.clientX + pad;
+    var y = evt.clientY + pad;
+    if (x + r.width > window.innerWidth - 8) x = evt.clientX - r.width - pad;
+    if (y + r.height > window.innerHeight - 8) y = evt.clientY - r.height - pad;
+    t.style.left = Math.max(8, x) + 'px';
+    t.style.top = Math.max(8, y) + 'px';
+  }
+
+  function hideTip() { if (tip) tip.style.opacity = '0'; }
+
+  /* 找出視覺上不擁擠的刻度間距 */
+  function niceStep(range, target) {
+    var raw = range / Math.max(1, target);
+    var mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+    var norm = raw / mag;
+    var step = norm >= 5 ? 10 : norm >= 2.5 ? 5 : norm >= 1.5 ? 2 : 1;
+    return step * mag;
+  }
+
+  function shortNum(v) {
+    var a = Math.abs(v);
+    if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e9 ? 0 : 1) + '億';
+    if (a >= 1e4) return (v / 1e4).toFixed(a >= 1e6 ? 0 : 1) + '萬';
+    return Math.round(v).toLocaleString('en-US');
+  }
+
+  function money(v) { return 'NT$ ' + Math.round(v).toLocaleString('en-US'); }
+
+  /* ==========================================================================
+     折線圖 — 預估資產價值曲線
+     opts: { data:[{label,value,note}], baseline, height }
+     ====================================================================== */
+  function lineChart(box, opts) {
+    var data = opts.data || [];
+    box.textContent = '';
+    if (!data.length) return;
+
+    var W = 480, H = opts.height || 190;
+    var m = { t: 12, r: 16, b: 26, l: 52 };
+    var iw = W - m.l - m.r, ih = H - m.t - m.b;
+
+    var svg = el('svg', {
+      viewBox: '0 0 ' + W + ' ' + H, class: 'chart-svg',
+      preserveAspectRatio: 'xMidYMid meet', role: 'img',
+      'aria-label': opts.ariaLabel || '預估資產價值曲線'
+    }, box);
+
+    var vals = data.map(function (d) { return d.value; });
+    if (opts.baseline) vals.push(opts.baseline);
+    var max = Math.max.apply(null, vals);
+    var min = Math.min.apply(null, vals);
+    var pad = (max - min) * 0.18 || max * 0.1 || 1;
+    var lo = Math.max(0, min - pad), hi = max + pad;
+    var step = niceStep(hi - lo, 4);
+    lo = Math.floor(lo / step) * step;
+    hi = Math.ceil(hi / step) * step;
+
+    var x = function (i) { return m.l + (data.length === 1 ? iw / 2 : (iw * i) / (data.length - 1)); };
+    var y = function (v) { return m.t + ih - ((v - lo) / (hi - lo)) * ih; };
+
+    /* 水平格線 + y 軸刻度 */
+    for (var g = lo; g <= hi + 1e-6; g += step) {
+      el('line', { x1: m.l, x2: m.l + iw, y1: y(g), y2: y(g), stroke: 'var(--c-grid)', 'stroke-width': 1 }, svg);
+      el('text', {
+        x: m.l - 7, y: y(g) + 3.5, 'text-anchor': 'end',
+        fill: 'var(--c-ink-3)', 'font-size': 9, 'font-family': 'var(--font-num)'
+      }, svg).textContent = shortNum(g);
+    }
+
+    /* 投入本金參考線 */
+    if (opts.baseline) {
+      el('line', {
+        x1: m.l, x2: m.l + iw, y1: y(opts.baseline), y2: y(opts.baseline),
+        stroke: 'var(--c-axis)', 'stroke-width': 1, 'stroke-dasharray': '4 3'
+      }, svg);
+      el('text', {
+        x: m.l + iw, y: y(opts.baseline) - 5, 'text-anchor': 'end',
+        fill: 'var(--c-ink-3)', 'font-size': 8.5
+      }, svg).textContent = '投入本金';
+    }
+
+    /* 面積 + 線 */
+    var dLine = '', dArea = '';
+    data.forEach(function (d, i) {
+      dLine += (i ? 'L' : 'M') + x(i).toFixed(2) + ' ' + y(d.value).toFixed(2) + ' ';
+    });
+    dArea = dLine + 'L' + x(data.length - 1).toFixed(2) + ' ' + (m.t + ih) + ' L' + x(0).toFixed(2) + ' ' + (m.t + ih) + ' Z';
+
+    var gid = 'ln' + Math.random().toString(36).slice(2, 8);
+    var defs = el('defs', {}, svg);
+    var lg = el('linearGradient', { id: gid, x1: 0, y1: 0, x2: 0, y2: 1 }, defs);
+    el('stop', { offset: '0%', 'stop-color': 'var(--series-1)', 'stop-opacity': .22 }, lg);
+    el('stop', { offset: '100%', 'stop-color': 'var(--series-1)', 'stop-opacity': .02 }, lg);
+
+    el('path', { d: dArea, fill: 'url(#' + gid + ')', stroke: 'none' }, svg);
+    el('path', { d: dLine.trim(), fill: 'none', stroke: 'var(--series-1)', 'stroke-width': 2,
+                 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, svg);
+
+    /* x 軸標籤與資料點 */
+    data.forEach(function (d, i) {
+      el('text', {
+        x: x(i), y: m.t + ih + 15, 'text-anchor': 'middle',
+        fill: 'var(--c-ink-2)', 'font-size': 9, 'font-family': 'var(--font-num)'
+      }, svg).textContent = d.label;
+
+      var last = i === data.length - 1;
+      el('circle', {
+        cx: x(i), cy: y(d.value), r: last ? 4.5 : 3,
+        fill: 'var(--series-1)', stroke: 'var(--c-surface)', 'stroke-width': 2
+      }, svg);
+    });
+
+    /* 端點直接標值 */
+    var lastD = data[data.length - 1];
+    el('text', {
+      x: x(data.length - 1), y: y(lastD.value) - 11, 'text-anchor': 'end',
+      fill: 'var(--c-ink)', 'font-size': 10, 'font-weight': 700, 'font-family': 'var(--font-num)'
+    }, svg).textContent = shortNum(lastD.value);
+
+    /* 互動層 */
+    var cross = el('line', {
+      y1: m.t, y2: m.t + ih, stroke: 'var(--c-axis)', 'stroke-width': 1,
+      'stroke-dasharray': '3 3', opacity: 0
+    }, svg);
+
+    data.forEach(function (d, i) {
+      var bw = iw / data.length;
+      el('rect', {
+        x: m.l + bw * i, y: m.t, width: bw, height: ih, fill: 'transparent',
+        style: 'cursor:crosshair'
+      }, svg).addEventListener('mousemove', function (e) {
+        cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i));
+        cross.setAttribute('opacity', 1);
+        showTip('<div class="tip-title">' + d.label + '　' + (d.note || '') + '</div>' +
+                '預估總值　<b>' + money(d.value) + '</b>', e);
+      });
+    });
+    svg.addEventListener('mouseleave', function () { cross.setAttribute('opacity', 0); hideTip(); });
+  }
+
+  /* ==========================================================================
+     堆疊長條圖 — 投入本金 / 預估獲利
+     opts: { labels:[], series:[{name,color,values:[]}], height }
+     ====================================================================== */
+  function stackedBar(box, opts) {
+    var labels = opts.labels || [], series = opts.series || [];
+    box.textContent = '';
+    if (!labels.length) return;
+
+    var W = 480, H = opts.height || 190;
+    var m = { t: 12, r: 12, b: 26, l: 52 };
+    var iw = W - m.l - m.r, ih = H - m.t - m.b;
+
+    var svg = el('svg', {
+      viewBox: '0 0 ' + W + ' ' + H, class: 'chart-svg',
+      preserveAspectRatio: 'xMidYMid meet', role: 'img',
+      'aria-label': opts.ariaLabel || '累積獲利結構圖'
+    }, box);
+
+    var totals = labels.map(function (_, i) {
+      return series.reduce(function (s, ser) { return s + Math.max(0, ser.values[i] || 0); }, 0);
+    });
+    var max = Math.max.apply(null, totals) || 1;
+    var step = niceStep(max, 4);
+    var hi = Math.ceil(max / step) * step;
+    var y = function (v) { return m.t + ih - (v / hi) * ih; };
+
+    for (var g = 0; g <= hi + 1e-6; g += step) {
+      el('line', { x1: m.l, x2: m.l + iw, y1: y(g), y2: y(g), stroke: 'var(--c-grid)', 'stroke-width': 1 }, svg);
+      el('text', {
+        x: m.l - 7, y: y(g) + 3.5, 'text-anchor': 'end',
+        fill: 'var(--c-ink-3)', 'font-size': 9, 'font-family': 'var(--font-num)'
+      }, svg).textContent = shortNum(g);
+    }
+    el('line', { x1: m.l, x2: m.l + iw, y1: y(0), y2: y(0), stroke: 'var(--c-axis)', 'stroke-width': 1 }, svg);
+
+    var slot = iw / labels.length;
+    var bw = Math.min(46, slot * 0.56);
+
+    labels.forEach(function (lab, i) {
+      var cx = m.l + slot * i + slot / 2;
+      var acc = 0;
+      series.forEach(function (ser, si) {
+        var v = Math.max(0, ser.values[i] || 0);
+        if (v <= 0) return;
+        var yTop = y(acc + v), yBot = y(acc);
+        var h = Math.max(0, yBot - yTop - (si > 0 ? 2 : 0)); /* 2px 隔線讓分段不相黏 */
+        var isTop = si === series.length - 1;
+        var r = isTop ? 4 : 0;
+        var rect = el('rect', {
+          x: cx - bw / 2, y: yTop, width: bw, height: h,
+          rx: r, ry: r, fill: ser.color, style: 'cursor:pointer'
+        }, svg);
+        if (isTop && r) { /* 只讓頂端圓角，底部維持切齊基線 */
+          rect.setAttribute('rx', 4); rect.setAttribute('ry', 4);
+        }
+        acc += v;
+        rect.addEventListener('mousemove', function (e) {
+          showTip('<div class="tip-title">' + lab + '</div>' +
+                  ser.name + '　<b>' + money(v) + '</b><br>合計　<b>' + money(totals[i]) + '</b>', e);
+        });
+        rect.addEventListener('mouseleave', hideTip);
+      });
+
+      el('text', {
+        x: cx, y: m.t + ih + 15, 'text-anchor': 'middle',
+        fill: 'var(--c-ink-2)', 'font-size': 9, 'font-family': 'var(--font-num)'
+      }, svg).textContent = lab;
+    });
+  }
+
+  /* ==========================================================================
+     甜甜圈圖 — 資產類別 / 投資區域 / 幣別
+     opts: { slices:[{label,value,color}], height }
+     ====================================================================== */
+  function donut(box, opts) {
+    var slices = (opts.slices || []).filter(function (s) { return s.value > 0; });
+    box.textContent = '';
+    if (!slices.length) return;
+
+    var S = 168, H = opts.height || S;
+    var cx = S / 2, cy = H / 2;
+    var rOuter = Math.min(S, H) / 2 - 20;
+    var rInner = rOuter * 0.6;
+
+    var svg = el('svg', {
+      viewBox: '0 0 ' + S + ' ' + H, class: 'chart-svg',
+      preserveAspectRatio: 'xMidYMid meet', role: 'img',
+      'aria-label': opts.ariaLabel || '配置比例圖',
+      /* 甜甜圈不隨欄寬無限放大，否則會蓋掉版面節奏 */
+      style: 'max-width:' + (opts.maxWidth || 190) + 'px; margin:0 auto;'
+    }, box);
+
+    var total = slices.reduce(function (s, x) { return s + x.value; }, 0);
+    var ang = -Math.PI / 2;
+
+    function pt(r, a) { return [cx + r * Math.cos(a), cy + r * Math.sin(a)]; }
+
+    slices.forEach(function (s) {
+      var sweep = (s.value / total) * Math.PI * 2;
+      var a0 = ang, a1 = ang + sweep;
+      ang = a1;
+
+      var big = sweep > Math.PI ? 1 : 0;
+      var p0 = pt(rOuter, a0), p1 = pt(rOuter, a1);
+      var q1 = pt(rInner, a1), q0 = pt(rInner, a0);
+      var d = 'M' + p0[0] + ' ' + p0[1] +
+              'A' + rOuter + ' ' + rOuter + ' 0 ' + big + ' 1 ' + p1[0] + ' ' + p1[1] +
+              'L' + q1[0] + ' ' + q1[1] +
+              'A' + rInner + ' ' + rInner + ' 0 ' + big + ' 0 ' + q0[0] + ' ' + q0[1] + 'Z';
+
+      var path = el('path', {
+        d: d, fill: s.color,
+        stroke: 'var(--c-surface)', 'stroke-width': 2, /* 2px 紙面隔線 */
+        style: 'cursor:pointer'
+      }, svg);
+
+      var pct = (s.value / total) * 100;
+      path.addEventListener('mousemove', function (e) {
+        showTip('<div class="tip-title">' + s.label + '</div><b>' + pct.toFixed(1) + '%</b>　' + money(s.value), e);
+      });
+      path.addEventListener('mouseleave', hideTip);
+
+      /* 占比夠大才直接標在圖上，避免文字打架 */
+      if (pct >= 12) {
+        var mid = (a0 + a1) / 2;
+        var lp = pt((rOuter + rInner) / 2, mid);
+        el('text', {
+          x: lp[0], y: lp[1] + 3.5, 'text-anchor': 'middle',
+          fill: '#fff', 'font-size': 10, 'font-weight': 700, 'font-family': 'var(--font-num)',
+          style: 'paint-order:stroke; stroke:rgba(0,0,0,.22); stroke-width:2.5px;'
+        }, svg).textContent = Math.round(pct) + '%';
+      }
+    });
+
+    if (opts.centerLabel) {
+      el('text', {
+        x: cx, y: cy + 4, 'text-anchor': 'middle',
+        fill: 'var(--c-ink-2)', 'font-size': 10, 'font-weight': 700
+      }, svg).textContent = opts.centerLabel;
+    }
+  }
+
+  /* 圖例 — 兩個以上系列一律附圖例，識別不靠顏色單獨承擔 */
+  function legend(container, items, opts) {
+    opts = opts || {};
+    var wrap = document.createElement('div');
+    wrap.className = 'legend';
+    items.forEach(function (it) {
+      var span = document.createElement('span');
+      span.className = 'legend__item';
+      var dot = document.createElement('span');
+      dot.className = 'legend__dot';
+      dot.style.background = it.color;
+      span.appendChild(dot);
+      span.appendChild(document.createTextNode(it.label));
+      if (it.value !== undefined && it.value !== null) {
+        var v = document.createElement('span');
+        v.className = 'legend__val';
+        v.textContent = it.value;
+        span.appendChild(v);
+      }
+      wrap.appendChild(span);
+    });
+    container.appendChild(wrap);
+    return wrap;
+  }
+
+  window.Charts = {
+    line: lineChart,
+    stacked: stackedBar,
+    donut: donut,
+    legend: legend,
+    shortNum: shortNum,
+    hideTip: hideTip
+  };
+})();
+
+</script>
+<script>
+/* ==== assets/app.js ==== */
+/* =============================================================================
+   基金配置建議書產生器 — 主程式
+   ========================================================================== */
+
+(function () {
+  'use strict';
+
+  var STORE_KEY = 'fundAdvisor.v2';
+  var HORIZONS = [1, 3, 5, 7, 10];
+  var SERIES = ['var(--series-1)', 'var(--series-2)', 'var(--series-3)', 'var(--series-4)',
+                'var(--series-5)', 'var(--series-6)', 'var(--series-7)', 'var(--series-8)'];
+
+  /* ---------------------------------------------------------------- 工具 -- */
+
+  var $  = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+
+  function esc(s) {
+    return String(s === null || s === undefined ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function h(tag, attrs, children) {
+    var n = document.createElement(tag);
+    if (attrs) for (var k in attrs) {
+      if (k === 'class') n.className = attrs[k];
+      else if (k === 'html') n.innerHTML = attrs[k];
+      else if (k === 'text') n.textContent = attrs[k];
+      else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), attrs[k]);
+      else if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+    }
+    (children || []).forEach(function (c) {
+      if (c === null || c === undefined || c === false) return;
+      n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+    });
+    return n;
+  }
+
+  function num(v)  { return Math.round(v).toLocaleString('en-US'); }
+  function nt(v)   { return 'NT$ ' + num(v); }
+  function pct(v, d) { return (v === null || v === undefined || isNaN(v)) ? '—' : v.toFixed(d === undefined ? 2 : d) + '%'; }
+  function todayISO() { return new Date().toISOString().slice(0, 10); }
+
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    var p = String(iso).split('-');
+    return p.length === 3 ? (p[1].replace(/^0/, '') + '/' + p[2].replace(/^0/, '')) : iso;
+  }
+  function fmtDateFull(iso) {
+    if (!iso) return '—';
+    var p = String(iso).split('-');
+    return p.length === 3 ? (p[0] + '/' + p[1] + '/' + p[2]) : iso;
+  }
+
+  /* --------------------------------------------------------------- 狀態 -- */
+
+  var state = {
+    meta: null,
+    funds: null,
+    plan: {
+      client: '', advisor: '', planName: '平衡型策略',
+      amount: 10000000, fx: 29.5, mode: 'total',
+      items: []
+    },
+    ui: { cat: 'all', q: '', rr: 'all', payout: 'all', sortKey: 'cat', sortDir: 1, tab: 'compare' }
+  };
+
+  function deepCopy(o) { return JSON.parse(JSON.stringify(o)); }
+
+  function loadState() {
+    state.meta  = deepCopy(window.DEFAULT_META);
+    state.funds = deepCopy(window.DEFAULT_FUNDS);
+    var raw;
+    try { raw = localStorage.getItem(STORE_KEY); } catch (e) { raw = null; }
+    if (!raw) return;
+    try {
+      var s = JSON.parse(raw);
+      if (s.meta)  Object.assign(state.meta, s.meta);
+      if (s.plan)  Object.assign(state.plan, s.plan);
+      if (s.funds && s.funds.length) mergeFunds(s.funds);
+    } catch (e) {
+      console.warn('儲存的資料無法解析，已改用預設值', e);
+    }
+  }
+
+  /* 只覆寫使用者改過的欄位，新版預設資料庫新增的基金仍會出現 */
+  function mergeFunds(saved) {
+    var byId = {};
+    state.funds.forEach(function (f) { byId[f.id] = f; });
+    saved.forEach(function (s) {
+      if (byId[s.id]) Object.assign(byId[s.id], s);
+      else state.funds.push(s);
+    });
+  }
+
+  var saveTimer = null;
+  function saveState() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () {
+      try {
+        localStorage.setItem(STORE_KEY, JSON.stringify({
+          meta: state.meta, plan: state.plan, funds: state.funds
+        }));
+      } catch (e) { /* 隱私模式或容量已滿時忽略，功能不受影響 */ }
+    }, 250);
+  }
+
+  function fundById(id) {
+    for (var i = 0; i < state.funds.length; i++) if (state.funds[i].id === id) return state.funds[i];
+    return null;
+  }
+  function catName(id) {
+    var c = window.CATEGORIES.filter(function (x) { return x.id === id; })[0];
+    return c ? c.name : id;
+  }
+
+  /* ==========================================================================
+     計算模型
+     ====================================================================== */
+
+  /* 取某年期的年化報酬率；缺該年期時沿用最接近的可得年期並回報是否為替代值 */
+  function returnFor(f, n) {
+    var r = f.returns || {};
+    if (r[n] !== undefined && r[n] !== null) return { value: r[n], exact: true };
+    var keys = Object.keys(r).map(Number).filter(function (k) { return !isNaN(k) && r[k] !== null; }).sort(function (a, b) { return a - b; });
+    if (!keys.length) return { value: 0, exact: false };
+    var pick = keys[0];
+    keys.forEach(function (k) { if (k <= n) pick = k; });
+    return { value: r[pick], exact: false, from: pick };
+  }
+
+  function planItems() {
+    return state.plan.items
+      .map(function (it) {
+        var f = fundById(it.id);
+        return f ? { id: it.id, weight: Number(it.weight) || 0, fund: f } : null;
+      })
+      .filter(Boolean);
+  }
+
+  function compute() {
+    var items = planItems();
+    var amount = Number(state.plan.amount) || 0;
+    var wsum = items.reduce(function (s, it) { return s + it.weight; }, 0);
+    var res = {
+      items: [], amount: amount, weightSum: wsum,
+      annualIncome: 0, monthlyIncome: 0, weightedYield: 0, weightedRR: 0,
+      projections: [], approxUsed: false, mode: state.plan.mode
+    };
+    if (!items.length || wsum <= 0) return res;
+
+    items.forEach(function (it, i) {
+      var amt = amount * (it.weight / wsum);
+      var f = it.fund;
+      var y = Number(f.yield) || 0;
+      var income = amt * y / 100;
+      res.annualIncome += income;
+      res.weightedYield += (it.weight / wsum) * y;
+      res.weightedRR += (it.weight / wsum) * (Number(f.rr) || 0);
+      res.items.push({
+        id: it.id, fund: f, weight: it.weight,
+        share: it.weight / wsum, amount: amt,
+        annualIncome: income, monthlyIncome: income / 12,
+        color: i < SERIES.length ? SERIES[i] : 'var(--c-ink-3)'
+      });
+    });
+    res.monthlyIncome = res.annualIncome / 12;
+
+    HORIZONS.forEach(function (n) {
+      var capital = 0, cumIncome = 0;
+      res.items.forEach(function (row) {
+        var r = returnFor(row.fund, n);
+        if (!r.exact) res.approxUsed = true;
+        var total = r.value / 100;
+        if (state.plan.mode === 'total') {
+          capital += row.amount * Math.pow(1 + total, n);
+        } else {
+          var g = total - (Number(row.fund.yield) || 0) / 100;
+          capital += row.amount * Math.pow(1 + g, n);
+          cumIncome += row.annualIncome * n;
+        }
+      });
+      res.projections.push({
+        years: n, capital: capital, cumIncome: cumIncome,
+        total: capital + cumIncome,
+        gain: capital + cumIncome - amount,
+        cagr: amount > 0 ? (Math.pow((capital + cumIncome) / amount, 1 / n) - 1) * 100 : 0
+      });
+    });
+    return res;
+  }
+
+  function projAt(res, years) {
+    for (var i = 0; i < res.projections.length; i++) if (res.projections[i].years === years) return res.projections[i];
+    return null;
+  }
+
+  /* 依欄位彙總（資產類別 / 投資區域 / 幣別） */
+  function groupBy(res, key) {
+    var map = {}, order = [];
+    res.items.forEach(function (row) {
+      var k = row.fund[key] || '其他';
+      if (!(k in map)) { map[k] = 0; order.push(k); }
+      map[k] += row.amount;
+    });
+    return order
+      .map(function (k) { return { label: k, value: map[k] }; })
+      .sort(function (a, b) { return b.value - a.value; })
+      .map(function (s, i) { s.color = i < SERIES.length ? SERIES[i] : 'var(--c-ink-3)'; return s; });
+  }
+
+  /* ==========================================================================
+     基金比較
+     ====================================================================== */
+
+  function filteredFunds() {
+    var u = state.ui;
+    var q = u.q.trim().toLowerCase();
+    var list = state.funds.filter(function (f) {
+      if (u.cat !== 'all' && f.cat !== u.cat) return false;
+      if (u.rr !== 'all' && String(f.rr) !== u.rr) return false;
+      if (u.payout === 'income' && f.payout === '累積') return false;
+      if (u.payout === 'accum' && f.payout !== '累積') return false;
+      if (!q) return true;
+      var hay = (f.name + ' ' + f.short + ' ' + f.direction + ' ' +
+        (f.holdings || []).map(function (x) { return x.name; }).join(' ')).toLowerCase();
+      return hay.indexOf(q) >= 0;
+    });
+
+    var key = u.sortKey, dir = u.sortDir;
+    var catOrder = {};
+    window.CATEGORIES.forEach(function (c, i) { catOrder[c.id] = i; });
+
+    list.sort(function (a, b) {
+      var av, bv;
+      switch (key) {
+        case 'name':  return a.name.localeCompare(b.name, 'zh-Hant') * dir;
+        case 'nav':   av = a.nav === null ? -1 : a.nav; bv = b.nav === null ? -1 : b.nav; break;
+        case 'rr':    av = a.rr; bv = b.rr; break;
+        case 'yield': av = a.yield || 0; bv = b.yield || 0; break;
+        case 'r1':    av = returnFor(a, 1).value; bv = returnFor(b, 1).value; break;
+        case 'r5':    av = returnFor(a, 5).value; bv = returnFor(b, 5).value; break;
+        default:      av = catOrder[a.cat]; bv = catOrder[b.cat];
+          if (av === bv) return a.name.localeCompare(b.name, 'zh-Hant');
+      }
+      return (av - bv) * dir;
+    });
+    return list;
+  }
+
+  function holdingsHTML(f) {
+    if (!f.holdings || !f.holdings.length) return '<span class="muted">—</span>';
+    var s = f.holdings.map(function (x, i) {
+      return (i + 1) + ' ' + esc(x.name) + ' <b>' + x.weight.toFixed(2) + '%</b>';
+    }).join('｜');
+    return s + ' <span class="as-of">（' + fmtDate(f.holdingsDate) + '）</span>';
+  }
+
+  function navHTML(f) {
+    if (f.nav === null || f.nav === undefined) return '<span class="muted">待平台核對</span>';
+    return '<b>' + f.nav.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 }) +
+           '</b> ' + f.currency + '<br><span class="muted">' + fmtDate(f.navDate) + '</span>';
+  }
+
+  function renderCompare() {
+    var host = $('#compareTable');
+    var list = filteredFunds();
+    host.textContent = '';
+
+    $('#compareCount').textContent = '符合條件 ' + list.length + ' 檔／全部 ' + state.funds.length + ' 檔';
+
+    if (!list.length) {
+      host.appendChild(h('div', { class: 'empty', text: '沒有符合條件的基金，請放寬篩選條件。' }));
+      return;
+    }
+
+    var cols = [
+      { key: 'name',  label: '基金／ETF', sortable: true },
+      { key: 'nav',   label: '最新淨值・日期', sortable: true, num: true },
+      { key: 'rr',    label: 'RR', sortable: true },
+      { key: 'yield', label: '年化配息率', sortable: true, num: true },
+      { key: 'r1',    label: '近1年', sortable: true, num: true },
+      { key: 'r5',    label: '近5年', sortable: true, num: true },
+      { key: 'hold',  label: '前五大標的與占比（持股日）' },
+      { key: 'act',   label: '' }
+    ];
+
+    var thead = h('thead', {}, [h('tr', {}, cols.map(function (c) {
+      var th = h('th', { class: c.num ? 'num' : '' }, [c.label]);
+      if (c.sortable) {
+        th.classList.add('sortable');
+        th.setAttribute('role', 'button');
+        th.setAttribute('tabindex', '0');
+        var active = state.ui.sortKey === c.key;
+        if (active) th.textContent = c.label + (state.ui.sortDir > 0 ? ' ▲' : ' ▼');
+        var doSort = function () {
+          if (state.ui.sortKey === c.key) state.ui.sortDir *= -1;
+          else { state.ui.sortKey = c.key; state.ui.sortDir = c.key === 'name' ? 1 : -1; }
+          renderCompare();
+        };
+        th.addEventListener('click', doSort);
+        th.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); doSort(); } });
+      }
+      return th;
+    }))]);
+
+    var picked = {};
+    state.plan.items.forEach(function (it) { picked[it.id] = true; });
+
+    var tbody = h('tbody', {}, list.map(function (f) {
+      var r1 = returnFor(f, 1), r5 = returnFor(f, 5);
+      var tr = h('tr', { class: picked[f.id] ? 'is-picked' : '' }, [
+        h('td', {}, [
+          h('div', { class: 'fund-name', text: f.name }),
+          h('div', { class: 'fund-meta', text: catName(f.cat) + '｜' + f.assetClass + '｜' + f.region + '｜' + f.payout + '｜' + f.direction })
+        ]),
+        h('td', { class: 'num', html: navHTML(f) }),
+        h('td', {}, [h('span', { class: 'pill pill--rr' + f.rr, text: 'RR' + f.rr })]),
+        h('td', { class: 'num', html: f.yield ? '<span class="assumed" title="假設值，請於資料維護分頁核對">' + f.yield.toFixed(2) + '%</span>' : '<span class="muted">累積</span>' }),
+        h('td', { class: 'num ' + (r1.value >= 0 ? 'val-up' : 'val-down'), text: pct(r1.value, 1) + (r1.exact ? '' : '*') }),
+        h('td', { class: 'num ' + (r5.value >= 0 ? 'val-up' : 'val-down'), text: pct(r5.value, 1) + (r5.exact ? '' : '*') }),
+        h('td', { class: 'holdings-inline', html: holdingsHTML(f) }),
+        h('td', {}, [
+          h('button', {
+            class: 'btn btn--sm' + (picked[f.id] ? '' : ' btn--primary'),
+            text: picked[f.id] ? '已加入' : '加入配置',
+            disabled: picked[f.id] ? 'disabled' : null,
+            onclick: function () { addToPlan(f.id); }
+          })
+        ])
+      ]);
+      return tr;
+    }));
+
+    host.appendChild(h('table', { class: 'data' }, [thead, tbody]));
+  }
+
+  /* ==========================================================================
+     配置試算
+     ====================================================================== */
+
+  function addToPlan(id) {
+    if (state.plan.items.some(function (it) { return it.id === id; })) return;
+    var used = state.plan.items.reduce(function (s, it) { return s + (Number(it.weight) || 0); }, 0);
+    var w = Math.max(0, Math.min(100 - used, used === 0 ? 100 : 10));
+    state.plan.items.push({ id: id, weight: w || 10 });
+    saveState();
+    renderAll();
+    flash('已加入「' + fundById(id).short + '」，請於「配置試算」調整比例。');
+  }
+
+  function removeFromPlan(id) {
+    state.plan.items = state.plan.items.filter(function (it) { return it.id !== id; });
+    saveState();
+    renderAll();
+  }
+
+  function equalize() {
+    var n = state.plan.items.length;
+    if (!n) return;
+    var base = Math.floor((100 / n) * 100) / 100;
+    state.plan.items.forEach(function (it) { it.weight = base; });
+    var diff = Math.round((100 - base * n) * 100) / 100;
+    state.plan.items[0].weight = Math.round((base + diff) * 100) / 100;
+    saveState();
+    renderAll();
+  }
+
+  function normalize() {
+    var sum = state.plan.items.reduce(function (s, it) { return s + (Number(it.weight) || 0); }, 0);
+    if (sum <= 0) return;
+    state.plan.items.forEach(function (it) { it.weight = Math.round((it.weight / sum) * 10000) / 100; });
+    var after = state.plan.items.reduce(function (s, it) { return s + it.weight; }, 0);
+    state.plan.items[0].weight = Math.round((state.plan.items[0].weight + (100 - after)) * 100) / 100;
+    saveState();
+    renderAll();
+  }
+
+  /* 累積型沒有現金流，寫 NT$ 0 會被誤讀為「配息掛零」 */
+  function allocAmtText(row) {
+    if (!row) return '';
+    return nt(row.amount) + '　月配 ' + (row.monthlyIncome > 0 ? nt(row.monthlyIncome) : '—（累積型）');
+  }
+
+  function renderAllocRows(res) {
+    var host = $('#allocRows');
+    host.textContent = '';
+    if (!state.plan.items.length) {
+      host.appendChild(h('div', { class: 'empty', text: '尚未選擇標的。請到「基金比較」分頁挑選，或直接使用下方快速加入。' }));
+      return;
+    }
+
+    state.plan.items.forEach(function (it, i) {
+      var f = fundById(it.id);
+      if (!f) return;
+      var row = res.items.filter(function (r) { return r.id === it.id; })[0];
+      var color = i < SERIES.length ? SERIES[i] : 'var(--ink-3)';
+
+      host.appendChild(h('div', { class: 'alloc-row' }, [
+        h('div', { class: 'alloc-row__name' }, [
+          h('div', { class: 'fund-name' }, [
+            h('span', { class: 'alloc-swatch', style: 'background:' + color }),
+            f.name
+          ]),
+          h('div', { class: 'fund-meta', text: 'RR' + f.rr + '｜' + f.payout + '｜年化配息 ' + pct(f.yield || 0) + '｜' + f.currency })
+        ]),
+        h('input', {
+          class: 'input input--num', type: 'number', min: '0', max: '100', step: '0.5',
+          value: it.weight, 'aria-label': f.short + ' 配置比例（%）',
+          oninput: function (e) {
+            it.weight = Math.max(0, Number(e.target.value) || 0);
+            saveState();
+            var r = compute();
+            renderKPIs(r); renderPreviewCharts(r); renderTotalBar(r);
+            $$('.alloc-amt', host).forEach(function (node, idx) {
+              node.textContent = allocAmtText(r.items[idx]);
+            });
+          }
+        }),
+        h('div', { class: 'alloc-amt', text: allocAmtText(row) }),
+        h('button', {
+          class: 'icon-btn', title: '移除 ' + f.short, 'aria-label': '移除 ' + f.short,
+          text: '✕', onclick: function () { removeFromPlan(it.id); }
+        })
+      ]));
+    });
+  }
+
+  function renderTotalBar(res) {
+    var bar = $('#totalBar');
+    var sum = res.weightSum;
+    var off = Math.abs(sum - 100) > 0.01;
+    bar.className = 'total-bar' + (off ? ' is-off' : '');
+    bar.textContent = '';
+    bar.appendChild(h('span', { text: off ? '比例合計（不等於 100%，試算將按相對比重換算）' : '比例合計' }));
+    bar.appendChild(h('span', { class: 'num', text: sum.toFixed(2) + '%' }));
+  }
+
+  function renderKPIs(res) {
+    var host = $('#kpiRow');
+    host.textContent = '';
+    var p5 = projAt(res, 5), p10 = projAt(res, 10);
+    var cards = [
+      { label: '預估月領息', value: num(res.monthlyIncome), unit: 'NT$', foot: '加權年化配息率 ' + pct(res.weightedYield), key: true },
+      { label: '5年資產預估', value: num(p5 ? p5.total : 0), unit: 'NT$', foot: p5 ? '年化 ' + pct(p5.cagr, 1) : '' },
+      { label: '10年資產預估', value: num(p10 ? p10.total : 0), unit: 'NT$', foot: p10 ? '年化 ' + pct(p10.cagr, 1) : '' },
+      { label: '加權風險等級', value: 'RR' + (res.weightedRR ? res.weightedRR.toFixed(1) : '—'), foot: '依配置比例加權' },
+      { label: '預估年領息', value: num(res.annualIncome), unit: 'NT$', foot: '配息型標的合計' }
+    ];
+    cards.forEach(function (c) {
+      host.appendChild(h('div', { class: 'kpi' + (c.key ? ' kpi--accent' : '') }, [
+        h('div', { class: 'kpi__label', text: c.label }),
+        h('div', { class: 'kpi__value' }, [c.unit ? h('small', { text: c.unit }) : null, c.value]),
+        h('div', { class: 'kpi__foot', text: c.foot })
+      ]));
+    });
+  }
+
+  function renderPreviewCharts(res) {
+    var host = $('#previewCharts');
+    host.textContent = '';
+    if (!res.items.length) {
+      host.appendChild(h('div', { class: 'empty', text: '加入標的後即可預覽成長曲線與配置結構。' }));
+      return;
+    }
+
+    var topRow = h('div', { class: 'chart-grid' });
+    host.appendChild(topRow);
+
+    var lineBox = h('div', { class: 'chart-box' }, [
+      h('h4', { text: '預估資產價值曲線' }),
+      h('div', { class: 'chart-sub', text: state.plan.mode === 'total' ? '配息再投入（總報酬）' : '配息領出：本金部位＋累計已領配息' })
+    ]);
+    var lineSvg = h('div', {});
+    lineBox.appendChild(lineSvg);
+    topRow.appendChild(lineBox);
+    window.Charts.line(lineSvg, {
+      data: res.projections.map(function (p) {
+        return { label: p.years + 'Y', value: p.total, note: '年化 ' + pct(p.cagr, 1) };
+      }),
+      baseline: res.amount
+    });
+
+    var barBox = h('div', { class: 'chart-box' }, [
+      h('h4', { text: '累積獲利結構圖' }),
+      h('div', { class: 'chart-sub', text: '投入本金與預估獲利的組成' })
+    ]);
+    var barSvg = h('div', {});
+    barBox.appendChild(barSvg);
+    topRow.appendChild(barBox);
+    buildStack(barSvg, barBox, res);
+
+    var donutRow = h('div', { class: 'chart-grid chart-grid--donuts' });
+    host.appendChild(donutRow);
+
+    ['assetClass', 'region', 'currency'].forEach(function (key) {
+      var titles = { assetClass: '資產類別', region: '投資區域', currency: '幣別比例' };
+      var slices = groupBy(res, key);
+      var box = h('div', { class: 'chart-box' }, [
+        h('h4', { text: titles[key] }),
+        h('div', { class: 'chart-sub', text: '依投資金額占比' })
+      ]);
+      var svgBox = h('div', {});
+      box.appendChild(svgBox);
+      donutRow.appendChild(box);
+      window.Charts.donut(svgBox, { slices: slices, height: 168 });
+      window.Charts.legend(box, slices.map(function (s) {
+        return { label: s.label, color: s.color, value: (s.value / res.amount * 100).toFixed(1) + '%' };
+      }));
+    });
+  }
+
+  function buildStack(mount, box, res, height) {
+    var series;
+    if (state.plan.mode === 'total') {
+      series = [
+        { name: '投入本金', color: 'var(--series-1)', values: res.projections.map(function () { return res.amount; }) },
+        { name: '預估獲利', color: 'var(--series-2)', values: res.projections.map(function (p) { return Math.max(0, p.gain); }) }
+      ];
+    } else {
+      series = [
+        { name: '投入本金', color: 'var(--series-1)', values: res.projections.map(function () { return res.amount; }) },
+        { name: '資本增值', color: 'var(--series-2)', values: res.projections.map(function (p) { return Math.max(0, p.capital - res.amount); }) },
+        { name: '累計已領配息', color: 'var(--series-3)', values: res.projections.map(function (p) { return p.cumIncome; }) }
+      ];
+    }
+    window.Charts.stacked(mount, {
+      labels: res.projections.map(function (p) { return p.years + 'Y'; }),
+      series: series, height: height
+    });
+    window.Charts.legend(box, series.map(function (s) { return { label: s.name, color: s.color }; }));
+  }
+
+  function renderAllocate() {
+    var res = compute();
+    $('#planClient').value  = state.plan.client;
+    $('#planAdvisor').value = state.plan.advisor;
+    $('#planName').value    = state.plan.planName;
+    $('#planAmount').value  = state.plan.amount;
+    $('#planFx').value      = state.plan.fx;
+    $$('input[name="mode"]').forEach(function (r) { r.checked = r.value === state.plan.mode; });
+    renderAllocRows(res);
+    renderTotalBar(res);
+    renderKPIs(res);
+    renderPreviewCharts(res);
+    renderQuickAdd();
+    return res;
+  }
+
+  function renderQuickAdd() {
+    var sel = $('#quickAdd');
+    var cur = sel.value;
+    sel.textContent = '';
+    sel.appendChild(h('option', { value: '', text: '＋ 快速加入標的…' }));
+    window.CATEGORIES.forEach(function (c) {
+      var group = h('optgroup', { label: c.name });
+      state.funds.filter(function (f) { return f.cat === c.id; }).forEach(function (f) {
+        var used = state.plan.items.some(function (it) { return it.id === f.id; });
+        group.appendChild(h('option', { value: f.id, text: (used ? '✓ ' : '') + f.name, disabled: used ? 'disabled' : null }));
+      });
+      if (group.children.length) sel.appendChild(group);
+    });
+    sel.value = cur;
+  }
+
+  /* ==========================================================================
+     建議書（A4）
+     ====================================================================== */
+
+  function sheet(children, footNote, pageNo, pageTotal) {
+    var body = h('div', { class: 'sheet__body' }, children);
+    /* 沒有風險警語的頁面（例如比較表）需要撐開空白，讓頁尾貼齊紙張底部 */
+    if (!body.querySelector('.disclaimer')) body.appendChild(h('div', { style: 'flex:1 1 auto' }));
+    var s = h('div', { class: 'sheet' }, [body]);
+    s.appendChild(h('div', { class: 'sheet__foot' }, [
+      h('span', { text: footNote || state.meta.navNote }),
+      h('span', { class: 'pageno', text: pageNo && pageTotal ? pageNo + ' / ' + pageTotal : '' })
+    ]));
+    return s;
+  }
+
+  /* 標的數量會撐高版面。內容超過一張 A4 時整頁等比縮到剛好一頁，
+     避免最後一段被切到下一頁、或印出一張空白紙。 */
+  var A4_PX = 297 / 25.4 * 96;
+  var APPENDIX_PER_PAGE = 6;   /* 每頁 2 欄 × 3 列，剛好填滿附錄頁 */
+
+  function fitSheet(s) {
+    var body = s.querySelector('.sheet__body');
+    if (!body) return;
+    body.style.zoom = '';
+    for (var pass = 0; pass < 3; pass++) {
+      var overflow = s.scrollHeight - A4_PX;
+      if (overflow <= 1) break;
+      var current = parseFloat(body.style.zoom) || 1;
+      var bodyH = body.scrollHeight * current;
+      var next = Math.max(0.62, current * (bodyH - overflow) / bodyH);
+      body.style.zoom = String(Math.floor(next * 1000) / 1000);
+    }
+  }
+
+  function mountSheets(host, sheets) {
+    host.textContent = '';
+    sheets.forEach(function (s) { host.appendChild(s); });
+    sheets.forEach(fitSheet);   /* 必須在進入 DOM 之後量測 */
+  }
+
+  function docHeader() {
+    var now = new Date();
+    var stamp = now.getFullYear() + '/' + (now.getMonth() + 1) + '/' + now.getDate() + ' ' +
+      String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    return h('div', { class: 'doc-header' }, [
+      h('div', { class: 'doc-header__name', text: state.plan.client || '基金配置建議書' }),
+      h('div', { class: 'doc-header__row' }, [
+        h('div', { class: 'doc-header__meta', html:
+          '客戶：<b>' + esc(state.plan.client || '—') + '</b><span class="sep">|</span>' +
+          '承辦顧問：<b>' + esc(state.plan.advisor || '—') + '</b>' }),
+        h('div', { class: 'doc-header__dates', html:
+          '淨值基準：' + fmtDateFull(state.meta.navAsOf) + '<br>產出日期：' + stamp })
+      ])
+    ]);
+  }
+
+  function docH(n, title, note) {
+    return h('div', { class: 'doc-h' }, [
+      h('span', { class: 'doc-h__n', text: n + '.' }),
+      h('span', { text: title }),
+      note ? h('span', { class: 'doc-h__note', text: note }) : null
+    ]);
+  }
+
+  function buildReportSheets() {
+    var res = compute();
+    var sheets = [];
+    if (!res.items.length) return sheets;
+
+    var p5 = projAt(res, 5), p10 = projAt(res, 10);
+
+    /* ------------------------------------------------- 第 1 頁：總覽 --- */
+    var page1 = [];
+    page1.push(docHeader());
+
+    page1.push(h('div', { class: 'doc-block' }, [
+      h('div', { class: 'ov-grid' }, [
+        h('div', {}, [
+          docH(1, '投資計畫總覽'),
+          h('div', { class: 'pcard' }, [
+            h('div', { class: 'pcard__label', text: '投資方案' }),
+            h('div', { class: 'pcard__plan', text: state.plan.planName || '—' }),
+            h('div', { class: 'pcard__label', text: '投資金額' }),
+            h('div', { class: 'pcard__amt', html: '<small>NT$</small>' + num(res.amount) })
+          ])
+        ]),
+        h('div', {}, [
+          docH(2, '預估成效分析', state.plan.mode === 'total' ? '配息再投入（總報酬）' : '配息領出'),
+          h('div', { class: 'ov-stats' }, [
+            h('div', { class: 'pstat pstat--key' }, [
+              h('div', { class: 'pstat__label', text: '預估月領息' }),
+              h('div', { class: 'pstat__value', html: '<small>NT$</small>' + num(res.monthlyIncome) }),
+              h('div', { class: 'pstat__foot', text: '加權年化配息率 ' + pct(res.weightedYield) })
+            ]),
+            h('div', { class: 'pstat' }, [
+              h('div', { class: 'pstat__label', text: '5年資產預估' }),
+              h('div', { class: 'pstat__value', html: '<small>NT$</small>' + num(p5.total) }),
+              h('div', { class: 'pstat__foot', text: '年化 ' + pct(p5.cagr, 1) })
+            ]),
+            h('div', { class: 'pstat' }, [
+              h('div', { class: 'pstat__label', text: '10年資產預估' }),
+              h('div', { class: 'pstat__value', html: '<small>NT$</small>' + num(p10.total) }),
+              h('div', { class: 'pstat__foot', text: '年化 ' + pct(p10.cagr, 1) })
+            ])
+          ])
+        ])
+      ])
+    ]));
+
+    /* 配置明細表 */
+    var rows = res.items.map(function (r) {
+      return h('tr', {}, [
+        h('td', { class: 'name' }, [
+          h('span', { class: 'pswatch', style: 'background:' + r.color }),
+          r.fund.name
+        ]),
+        h('td', {}, [h('span', { class: 'ptag', text: r.fund.assetClass })]),
+        h('td', { class: 'num', text: 'RR' + r.fund.rr }),
+        h('td', { class: 'num', text: r.fund.yield ? pct(r.fund.yield) : '累積' }),
+        h('td', { class: 'num', text: (r.share * 100).toFixed(1) + '%' }),
+        h('td', { class: 'num', text: nt(r.amount) }),
+        h('td', { class: 'num', text: r.monthlyIncome > 0 ? nt(r.monthlyIncome) : '—' })
+      ]);
+    });
+
+    page1.push(h('div', { class: 'doc-block' }, [
+      docH(3, '配置明細表', '共 ' + res.items.length + ' 檔標的'),
+      h('table', { class: 'ptable' }, [
+        h('thead', {}, [h('tr', {}, [
+          h('th', { text: '標的名稱' }),
+          h('th', { text: '類型' }),
+          h('th', { class: 'num', text: 'RR' }),
+          h('th', { class: 'num', text: '年化配息率' }),
+          h('th', { class: 'num', text: '比例' }),
+          h('th', { class: 'num', text: '投資金額' }),
+          h('th', { class: 'num', text: '預估月配息' })
+        ])]),
+        h('tbody', {}, rows),
+        h('tfoot', {}, [h('tr', {}, [
+          h('td', { text: '合計' }),
+          h('td', { text: '' }),
+          h('td', { class: 'num', text: 'RR' + res.weightedRR.toFixed(1) }),
+          h('td', { class: 'num', text: pct(res.weightedYield) }),
+          h('td', { class: 'num', text: '100.0%' }),
+          h('td', { class: 'num', text: nt(res.amount) }),
+          h('td', { class: 'num', text: nt(res.monthlyIncome) })
+        ])])
+      ])
+    ]));
+
+    /* 動能成長分析 */
+    var lineMount = h('div', {}), barMount = h('div', {});
+    var lineCard = h('div', { class: 'pchart' }, [
+      h('div', { class: 'pchart__title', text: '預估資產價值曲線' }),
+      h('div', { class: 'pchart__sub', text: state.plan.mode === 'total' ? '配息再投入（總報酬）' : '本金部位＋累計已領配息' }),
+      lineMount
+    ]);
+    var barCard = h('div', { class: 'pchart' }, [
+      h('div', { class: 'pchart__title', text: '累積獲利結構圖' }),
+      h('div', { class: 'pchart__sub', text: '投入本金與預估獲利的組成' }),
+      barMount
+    ]);
+    page1.push(h('div', { class: 'doc-block' }, [
+      docH(4, '動能成長分析', '各年期採該年期年化報酬率推算'),
+      h('div', { class: 'pchart-grid pchart-grid--2' }, [lineCard, barCard])
+    ]));
+
+    /* 區域分析 */
+    var donutCards = ['assetClass', 'region', 'currency'].map(function (key) {
+      var titles = { assetClass: '資產類別', region: '投資區域', currency: '幣別比例' };
+      var slices = groupBy(res, key);
+      var mount = h('div', {});
+      var card = h('div', { class: 'pchart' }, [
+        h('div', { class: 'pchart__title', text: titles[key] }),
+        h('div', { class: 'pchart__sub', text: '依投資金額占比' }),
+        mount
+      ]);
+      card._render = function () {
+        window.Charts.donut(mount, { slices: slices, maxWidth: 84 });
+        window.Charts.legend(card, slices.map(function (s) {
+          return { label: s.label, color: s.color, value: (s.value / res.amount * 100).toFixed(0) + '%' };
+        }));
+      };
+      return card;
+    });
+    page1.push(h('div', { class: 'doc-block' }, [
+      docH(5, '資產配置區域分析'),
+      h('div', { class: 'pchart-grid pchart-grid--3' }, donutCards)
+    ]));
+
+    page1.push(disclaimerBlock(res));
+
+    var totalPages = 1 + Math.ceil(res.items.length / APPENDIX_PER_PAGE);
+    var s1 = sheet(page1, state.meta.navNote, 1, totalPages);
+    sheets.push(s1);
+
+    /* 圖表在節點建立後再繪，確保 CSS 變數已可解析 */
+    window.Charts.line(lineMount, {
+      data: res.projections.map(function (p) { return { label: p.years + 'Y', value: p.total, note: '年化 ' + pct(p.cagr, 1) }; }),
+      baseline: res.amount, height: 132
+    });
+    buildStack(barMount, barCard, res, 132);
+    donutCards.forEach(function (c) { c._render(); });
+
+    /* --------------------------------------------- 第 2 頁起：持倉附錄 --- */
+    var chunks = [];
+    for (var i = 0; i < res.items.length; i += APPENDIX_PER_PAGE) chunks.push(res.items.slice(i, i + APPENDIX_PER_PAGE));
+
+    chunks.forEach(function (chunk, ci) {
+      var cards = chunk.map(function (r) {
+        return h('div', { class: 'hold-card' }, [
+          h('div', { class: 'hold-card__head' }, [
+            h('h4', { text: r.fund.name }),
+            h('div', { class: 'sub', text: '持股基準日 ' + fmtDateFull(r.fund.holdingsDate) + '　配置 ' + (r.share * 100).toFixed(1) + '%' })
+          ]),
+          h('table', {}, [
+            h('thead', {}, [h('tr', {}, [h('th', { text: '標的名稱' }), h('th', { class: 'num', style: 'text-align:right', text: '權重' })])]),
+            h('tbody', {}, (r.fund.holdings || []).map(function (x) {
+              return h('tr', {}, [h('td', { text: x.name }), h('td', { class: 'num', text: x.weight.toFixed(2) + '%' })]);
+            }))
+          ])
+        ]);
+      });
+
+      var body = [
+        docH(6, '報告附件：近期標的最大持倉明細' + (chunks.length > 1 ? '（' + (ci + 1) + '/' + chunks.length + '）' : '')),
+        h('p', { class: 'muted', style: 'font-size:8pt;margin-bottom:3mm', text: '此頁為投資組合中各標的之核心持股權重明細，資料取自最近一期公開月報或每日持倉。' }),
+        h('div', { class: 'hold-grid' }, cards)
+      ];
+      sheets.push(sheet(body, state.meta.navNote, ci + 2, totalPages));
+    });
+
+    return sheets;
+  }
+
+  function disclaimerBlock(res) {
+    var items = [
+      '本報告所有數據係以標的之歷史績效與數學模型推估之假設情境，<b>非保證收益、亦不代表未來實際報酬</b>；投資標的之價格可能因市場波動而漲跌，過去績效不代表未來表現。',
+      '本試算之預估報酬以標的近年年化報酬率推算，未計入實際申購／轉換／管理等相關費用、匯率變動及稅負，實際結果將有差異。' +
+        (res.approxUsed ? '<b>部分標的因成立時間較短，缺漏年期已沿用其最長可得年化報酬率替代。</b>' : ''),
+      state.plan.mode === 'total'
+        ? '本試算採「配息再投入」假設，配息金額視為滾入本金；若實際將配息領出，本金成長幅度將低於本表所列。'
+        : '本試算採「配息領出」假設，資產價值已扣除配息對本金的稀釋，累計配息另計於獲利結構圖中。',
+      '投資型保險商品（保單連結基金）之投資風險由要保人自行承擔，相關費用、保障內容與贖回條件請以保險公司正式契約條款及商品說明書為準。信貸／房貸資金投入具槓桿風險，可能造成本金虧損，請審慎評估自身還款能力。',
+      '本報告僅供理財規劃參考，不構成任何投資要約或保證，實際投保與投資決策請洽專業人員並詳閱公開說明書。'
+    ];
+    return h('div', { class: 'disclaimer' }, [
+      h('h5', { text: '重要聲明與風險警語' }),
+      h('ol', {}, items.map(function (t) { return h('li', { html: t }); }))
+    ]);
+  }
+
+  function renderReport() {
+    var host = $('#reportPreview');
+    host.textContent = '';
+    var sheets = buildReportSheets();
+    if (!sheets.length) {
+      host.appendChild(h('div', { class: 'empty', text: '請先在「配置試算」分頁加入標的並設定比例，建議書會即時產生。' }));
+      $('#btnPrintReport').disabled = true;
+      return;
+    }
+    $('#btnPrintReport').disabled = false;
+    mountSheets(host, sheets);
+  }
+
+  /* ==========================================================================
+     比較表（A4）
+     ====================================================================== */
+
+  function buildCompareSheets() {
+    var list = filteredFunds();
+    var sheets = [];
+    if (!list.length) return sheets;
+
+    /* 依分類分頁；每頁 5 檔剛好填滿 A4，同一分類跨頁時標題會加註（1）（2） */
+    var PER_PAGE = 8;
+    var groups = [];
+    window.CATEGORIES.forEach(function (c) {
+      var inCat = list.filter(function (f) { return f.cat === c.id; });
+      for (var i = 0; i < inCat.length; i += PER_PAGE) {
+        groups.push({
+          cat: c, funds: inCat.slice(i, i + PER_PAGE),
+          part: Math.floor(i / PER_PAGE) + 1, parts: Math.ceil(inCat.length / PER_PAGE)
+        });
+      }
+    });
+
+    var total = groups.length + 1;
+
+    /* 封面 */
+    sheets.push(sheet([
+      h('div', { class: 'doc-header' }, [
+        h('div', { class: 'doc-header__name', text: '基金投資方向、RR值與前五大持股' }),
+        h('div', { class: 'doc-header__row' }, [
+          h('div', { class: 'doc-header__meta', html:
+            '淨值基準：截至 <b>' + fmtDateFull(state.meta.navAsOf) + '</b> 最新可得公告<span class="sep">|</span>持股基準：最近一期公開月報' }),
+          h('div', { class: 'doc-header__dates', html: '收錄 ' + list.length + ' 檔<br>' + fmtDateFull(todayISO()) + ' 產出' })
+        ])
+      ]),
+      h('div', { class: 'doc-block' }, [
+        docH(1, '本份比較表的閱讀方式'),
+        h('table', { class: 'ptable' }, [
+          h('thead', {}, [h('tr', {}, [
+            h('th', { text: '欄位' }), h('th', { text: '基準' }), h('th', { text: '說明' })
+          ])]),
+          h('tbody', {}, [
+            h('tr', {}, [h('td', { class: 'name', text: 'RR1–RR5' }), h('td', { text: 'RR1 低 → RR5 高' }),
+                         h('td', { text: '通路風險分級；同一基金在不同銷售機構可能有細微差異' })]),
+            h('tr', {}, [h('td', { class: 'name', text: '淨值日期' }), h('td', { text: '截至 ' + fmtDateFull(state.meta.navAsOf) + ' 最新可得' }),
+                         h('td', { text: '境外基金與美股常落後一至二個交易日，逐列標示實際日期' })]),
+            h('tr', {}, [h('td', { class: 'name', text: '持股日期' }), h('td', { text: '基金月報／ETF 每日持倉' }),
+                         h('td', { text: '每列均標示本次採用的最新公開持股日期' })]),
+            h('tr', {}, [h('td', { class: 'name', text: '年化配息率' }), h('td', { text: '試算假設值' }),
+                         h('td', { text: '用於推估月配息金額，須依最新月報核對後再提供客戶' })])
+          ])
+        ])
+      ]),
+      h('div', { class: 'doc-block' }, [
+        docH(2, '收錄分類'),
+        h('table', { class: 'ptable' }, [
+          h('thead', {}, [h('tr', {}, [h('th', { text: '分類' }), h('th', { class: 'num', text: '檔數' }), h('th', { text: '判讀重點' })])]),
+          h('tbody', {}, window.CATEGORIES.map(function (c) {
+            var n = list.filter(function (f) { return f.cat === c.id; }).length;
+            return n ? h('tr', {}, [
+              h('td', { class: 'name', text: c.name }),
+              h('td', { class: 'num', text: n }),
+              h('td', { text: c.note })
+            ]) : null;
+          }).filter(Boolean))
+        ])
+      ]),
+      h('div', { class: 'cmp-note', text: '同一檔基金的不同現金流級別（月配／累積／固定配息）通常持有完全相同的底層資產，配息方式不同不代表投資方向不同。' })
+    ], state.meta.rrNote, 1, total));
+
+    /* 內頁 */
+    groups.forEach(function (g, gi) {
+      var body = [
+        h('div', { class: 'cmp-head' }, [
+          h('div', {}, [
+            h('div', { class: 'cmp-head__title', text: g.cat.name + (g.parts > 1 ? '（' + g.part + '）' : '') }),
+            h('div', { class: 'cmp-head__sub', text: g.cat.note })
+          ]),
+          h('div', { class: 'cmp-head__no', text: String(gi + 2).padStart(2, '0') })
+        ]),
+        h('table', { class: 'cmp' }, [
+          h('colgroup', {}, [
+            h('col', { style: 'width:24%' }), h('col', { style: 'width:13%' }),
+            h('col', { style: 'width:7%' }),  h('col', { style: 'width:18%' }),
+            h('col', { style: 'width:38%' })
+          ]),
+          h('thead', {}, [h('tr', {}, [
+            h('th', { text: '基金／ETF' }), h('th', { text: '最新淨值・日期' }),
+            h('th', { text: 'RR' }), h('th', { text: '投資方向' }),
+            h('th', { text: '前五大標的與占比（持股日）' })
+          ])]),
+          h('tbody', {}, g.funds.map(function (f) {
+            return h('tr', {}, [
+              h('td', {}, [
+                h('div', { class: 'c-name', text: f.name }),
+                h('div', { class: 'c-sub', text: f.payout + '｜' + f.currency + '｜' + f.region })
+              ]),
+              h('td', { class: 'c-nav', html: f.nav === null
+                ? '<span style="color:var(--p-ink-3)">待平台核對</span>'
+                : f.nav.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 }) + ' ' + f.currency +
+                  '<div class="c-sub">' + fmtDate(f.navDate) + '</div>' }),
+              h('td', { text: 'RR' + f.rr }),
+              h('td', { text: f.direction }),
+              h('td', { class: 'c-hold', html: holdingsHTML(f) })
+            ]);
+          }))
+        ])
+      ];
+      sheets.push(sheet(body, state.meta.navNote + '｜' + state.meta.rrNote, gi + 2, total));
+    });
+
+    return sheets;
+  }
+
+  function renderComparePreview() {
+    mountSheets($('#comparePreview'), buildCompareSheets());
+  }
+
+  /* ==========================================================================
+     列印
+     ====================================================================== */
+
+  function printSheets(sheets) {
+    if (!sheets.length) { flash('沒有可列印的內容。'); return; }
+    mountSheets($('#printRoot'), sheets);
+    window.Charts.hideTip();
+    setTimeout(function () { window.print(); }, 60);
+  }
+
+  window.addEventListener('afterprint', function () {
+    var root = $('#printRoot');
+    if (root) root.textContent = '';
+  });
+
+  /* ==========================================================================
+     資料維護
+     ====================================================================== */
+
+  function renderData() {
+    var host = $('#dataTable');
+    host.textContent = '';
+
+    var head = h('thead', {}, [h('tr', {}, [
+      h('th', { text: '基金／ETF' }),
+      h('th', { class: 'num', text: '最新淨值' }),
+      h('th', { text: '淨值日' }),
+      h('th', { class: 'num', text: 'RR' }),
+      h('th', { class: 'num', text: '年化配息率 %' }),
+      h('th', { class: 'num', text: '1年 %' }),
+      h('th', { class: 'num', text: '3年 %' }),
+      h('th', { class: 'num', text: '5年 %' }),
+      h('th', { class: 'num', text: '7年 %' }),
+      h('th', { class: 'num', text: '10年 %' })
+    ])]);
+
+    function numInput(f, get, set, cls) {
+      return h('input', {
+        class: 'input input--num ' + (cls || ''), type: 'number', step: 'any',
+        value: get() === null || get() === undefined ? '' : get(),
+        'aria-label': f.short,
+        onchange: function (e) {
+          var v = e.target.value === '' ? null : Number(e.target.value);
+          set(v === null || isNaN(v) ? null : v);
+          saveState();
+          renderCompare();
+        }
+      });
+    }
+
+    var body = h('tbody', {}, filteredFunds().map(function (f) {
+      return h('tr', {}, [
+        h('td', {}, [
+          h('div', { class: 'fund-name', text: f.name }),
+          h('div', { class: 'fund-meta', text: catName(f.cat) + '｜' + f.currency + '｜' + f.payout })
+        ]),
+        h('td', { class: 'num w-nav' }, [numInput(f, function () { return f.nav; }, function (v) { f.nav = v; })]),
+        h('td', { class: 'w-date' }, [h('input', {
+          class: 'input', type: 'date', value: f.navDate || '',
+          'aria-label': f.short + ' 淨值日',
+          onchange: function (e) { f.navDate = e.target.value; saveState(); renderCompare(); }
+        })]),
+        h('td', { class: 'num w-rr' }, [numInput(f, function () { return f.rr; }, function (v) { f.rr = v; })]),
+        h('td', { class: 'num w-pct' }, [numInput(f, function () { return f.yield; }, function (v) { f.yield = v || 0; })]),
+        h('td', { class: 'num w-pct' }, [numInput(f, function () { return f.returns[1]; }, function (v) { f.returns[1] = v; })]),
+        h('td', { class: 'num w-pct' }, [numInput(f, function () { return f.returns[3]; }, function (v) { f.returns[3] = v; })]),
+        h('td', { class: 'num w-pct' }, [numInput(f, function () { return f.returns[5]; }, function (v) { f.returns[5] = v; })]),
+        h('td', { class: 'num w-pct' }, [numInput(f, function () { return f.returns[7]; }, function (v) { f.returns[7] = v; })]),
+        h('td', { class: 'num w-pct' }, [numInput(f, function () { return f.returns[10]; }, function (v) { f.returns[10] = v; })])
+      ]);
+    }));
+
+    host.appendChild(h('table', { class: 'data data-table' }, [head, body]));
+  }
+
+  /* 貼上更新：一行一檔，用 tab 或逗號分隔（可直接從 Excel 複製） */
+  function applyPaste(text) {
+    var lines = text.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
+    var ok = 0, miss = [];
+    lines.forEach(function (line) {
+      var cells = line.split(/\t|,|｜|\|/).map(function (c) { return c.trim(); }).filter(function (c) { return c !== ''; });
+      if (cells.length < 2) return;
+      var key = cells[0];
+      var f = state.funds.filter(function (x) {
+        return x.id === key || x.name === key || x.short === key ||
+               x.name.indexOf(key) >= 0 || key.indexOf(x.short) >= 0;
+      })[0];
+      if (!f) { miss.push(key); return; }
+      var nav = Number(String(cells[1]).replace(/[^0-9.\-]/g, ''));
+      if (!isNaN(nav) && cells[1] !== '') f.nav = nav;
+      if (cells[2]) {
+        var d = cells[2].replace(/\//g, '-');
+        if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(d)) {
+          var pp = d.split('-');
+          f.navDate = pp[0] + '-' + pp[1].padStart(2, '0') + '-' + pp[2].padStart(2, '0');
+        }
+      }
+      if (cells[3]) {
+        var y = Number(String(cells[3]).replace(/[^0-9.\-]/g, ''));
+        if (!isNaN(y)) f.yield = y;
+      }
+      ok++;
+    });
+    saveState();
+    renderAll();
+    var msg = '已更新 ' + ok + ' 檔。';
+    if (miss.length) msg += '　找不到對應標的：' + miss.slice(0, 5).join('、') + (miss.length > 5 ? ' 等' : '');
+    flash(msg);
+  }
+
+  function exportJSON() {
+    var payload = { exportedAt: new Date().toISOString(), meta: state.meta, plan: state.plan, funds: state.funds };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '基金資料備份_' + todayISO() + '.json';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    flash('已匯出備份檔。');
+  }
+
+  function importJSON(file) {
+    var fr = new FileReader();
+    fr.onload = function () {
+      try {
+        var s = JSON.parse(fr.result);
+        if (s.meta) Object.assign(state.meta, s.meta);
+        if (s.plan) Object.assign(state.plan, s.plan);
+        if (s.funds) mergeFunds(s.funds);
+        saveState();
+        renderAll();
+        flash('匯入完成。');
+      } catch (e) {
+        flash('匯入失敗：檔案不是有效的備份 JSON。');
+      }
+    };
+    fr.readAsText(file);
+  }
+
+  function resetAll() {
+    if (!confirm('確定要清除所有自訂資料，回到內建預設值嗎？此動作無法復原。')) return;
+    try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+    state.meta = deepCopy(window.DEFAULT_META);
+    state.funds = deepCopy(window.DEFAULT_FUNDS);
+    state.plan = { client: '', advisor: '', planName: '平衡型策略', amount: 10000000, fx: 29.5, mode: 'total', items: [] };
+    saveState();
+    renderAll();
+    flash('已回復預設值。');
+  }
+
+  /* ==========================================================================
+     介面組裝
+     ====================================================================== */
+
+  var flashTimer = null;
+  function flash(msg) {
+    var el = $('#statusLine');
+    el.textContent = msg;
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(function () { el.textContent = ''; }, 5000);
+  }
+
+  function switchTab(id) {
+    state.ui.tab = id;
+    $$('.tab').forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.tab === id)); });
+    $$('.panel').forEach(function (p) { p.hidden = p.id !== 'panel-' + id; });
+    if (id === 'report') renderReport();
+    if (id === 'data') renderData();
+    window.scrollTo(0, 0);
+  }
+
+  function renderAll() {
+    renderCompare();
+    renderAllocate();
+    if (state.ui.tab === 'report') renderReport();
+    if (state.ui.tab === 'data') renderData();
+  }
+
+  function bindControls() {
+    $$('.tab').forEach(function (t) {
+      t.addEventListener('click', function () { switchTab(t.dataset.tab); });
+    });
+
+    /* 篩選 */
+    var catBar = $('#catChips');
+    var allChip = h('button', { class: 'chip', 'aria-pressed': 'true', text: '全部', onclick: function () { setCat('all'); } });
+    catBar.appendChild(allChip);
+    window.CATEGORIES.forEach(function (c) {
+      catBar.appendChild(h('button', { class: 'chip', 'aria-pressed': 'false', text: c.name, 'data-cat': c.id,
+        onclick: function () { setCat(c.id); } }));
+    });
+    function setCat(id) {
+      state.ui.cat = id;
+      $$('.chip', catBar).forEach(function (b) {
+        b.setAttribute('aria-pressed', String((b.dataset.cat || 'all') === id));
+      });
+      renderCompare();
+      if (state.ui.tab === 'data') renderData();
+    }
+
+    $('#searchBox').addEventListener('input', function (e) { state.ui.q = e.target.value; renderCompare(); });
+    $('#rrFilter').addEventListener('change', function (e) { state.ui.rr = e.target.value; renderCompare(); });
+    $('#payoutFilter').addEventListener('change', function (e) { state.ui.payout = e.target.value; renderCompare(); });
+
+    $('#btnPrintCompare').addEventListener('click', function () { printSheets(buildCompareSheets()); });
+    $('#btnPreviewCompare').addEventListener('click', function () {
+      var box = $('#comparePreviewWrap');
+      var open = box.hasAttribute('hidden');
+      if (open) { renderComparePreview(); box.removeAttribute('hidden'); this.textContent = '收合比較表預覽'; }
+      else { box.setAttribute('hidden', ''); this.textContent = '預覽比較表 PDF'; }
+    });
+
+    /* 方案欄位 */
+    function bindPlan(sel, key, cast) {
+      $(sel).addEventListener('input', function (e) {
+        state.plan[key] = cast ? cast(e.target.value) : e.target.value;
+        saveState();
+        var res = compute();
+        renderKPIs(res); renderPreviewCharts(res); renderTotalBar(res);
+        renderAllocRows(res);
+      });
+    }
+    bindPlan('#planClient', 'client');
+    bindPlan('#planAdvisor', 'advisor');
+    bindPlan('#planName', 'planName');
+    bindPlan('#planAmount', 'amount', Number);
+    bindPlan('#planFx', 'fx', Number);
+
+    $$('input[name="mode"]').forEach(function (r) {
+      r.addEventListener('change', function () {
+        state.plan.mode = r.value;
+        saveState();
+        var res = compute();
+        renderKPIs(res); renderPreviewCharts(res);
+      });
+    });
+
+    $('#btnEqualize').addEventListener('click', equalize);
+    $('#btnNormalize').addEventListener('click', normalize);
+    $('#btnClearPlan').addEventListener('click', function () {
+      if (!state.plan.items.length) return;
+      if (!confirm('清空目前配置？')) return;
+      state.plan.items = [];
+      saveState();
+      renderAll();
+    });
+    $('#quickAdd').addEventListener('change', function (e) {
+      if (e.target.value) { addToPlan(e.target.value); e.target.value = ''; }
+    });
+
+    $('#btnPrintReport').addEventListener('click', function () { printSheets(buildReportSheets()); });
+    $('#btnGoAllocate').addEventListener('click', function () { switchTab('allocate'); });
+
+    /* 資料維護 */
+    $('#navAsOf').addEventListener('change', function (e) {
+      state.meta.navAsOf = e.target.value;
+      saveState();
+      if (state.ui.tab === 'report') renderReport();
+    });
+    $('#btnApplyPaste').addEventListener('click', function () {
+      var t = $('#pasteBox').value;
+      if (!t.trim()) { flash('請先貼上資料。'); return; }
+      applyPaste(t);
+      $('#pasteBox').value = '';
+    });
+    $('#btnExport').addEventListener('click', exportJSON);
+    $('#fileImport').addEventListener('change', function (e) {
+      if (e.target.files && e.target.files[0]) importJSON(e.target.files[0]);
+      e.target.value = '';
+    });
+    $('#btnReset').addEventListener('click', resetAll);
+
+    /* 主題切換 */
+    var themeBtn = $('#btnTheme');
+    themeBtn.addEventListener('click', function () {
+      var cur = document.documentElement.getAttribute('data-theme');
+      var next = cur === 'dark' ? 'light' : cur === 'light' ? '' : 'dark';
+      if (next) document.documentElement.setAttribute('data-theme', next);
+      else document.documentElement.removeAttribute('data-theme');
+      try { localStorage.setItem('fundAdvisor.theme', next); } catch (e) {}
+      themeBtn.title = next === 'dark' ? '深色（點擊切換為淺色）' : next === 'light' ? '淺色（點擊切換為跟隨系統）' : '跟隨系統（點擊切換為深色）';
+    });
+    try {
+      var savedTheme = localStorage.getItem('fundAdvisor.theme');
+      if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
+    } catch (e) {}
+  }
+
+  /* 首次使用時給一組示範配置，讓畫面不是空的 */
+  function seedIfEmpty() {
+    if (state.plan.items.length) return;
+    var seed = [['agi-amg7', 80], ['agi-tw-dam', 10], ['agi-am', 10]];
+    seed.forEach(function (s) { if (fundById(s[0])) state.plan.items.push({ id: s[0], weight: s[1] }); });
+  }
+
+  function init() {
+    loadState();
+    seedIfEmpty();
+    $('#navAsOf').value = state.meta.navAsOf;
+    bindControls();
+    renderAll();
+    switchTab('compare');
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+
+</script>
+</body>
+</html>

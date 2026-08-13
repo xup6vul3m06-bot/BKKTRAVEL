@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>基金配置建議書產生器</title>
+<meta name="description" content="比較表列基金的淨值、風險等級與前五大持股，配置後輸出配息與本金成長預估的 A4 建議書 PDF。">
+<link rel="stylesheet" href="assets/app.css">
+<link rel="stylesheet" href="assets/print.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar__inner">
+    <div class="brand">
+      <span class="brand__mark">基金配置建議書</span>
+      <span class="brand__sub">比較 · 試算 · 輸出 PDF</span>
+    </div>
+
+    <nav class="tabs" role="tablist" aria-label="功能分頁">
+      <button class="tab" role="tab" data-tab="compare"  aria-selected="true"  aria-controls="panel-compare">基金比較</button>
+      <button class="tab" role="tab" data-tab="allocate" aria-selected="false" aria-controls="panel-allocate">配置試算</button>
+      <button class="tab" role="tab" data-tab="report"   aria-selected="false" aria-controls="panel-report">建議書</button>
+      <button class="tab" role="tab" data-tab="data"     aria-selected="false" aria-controls="panel-data">資料維護</button>
+    </nav>
+
+    <button class="icon-btn" id="btnTheme" title="跟隨系統（點擊切換為深色）" aria-label="切換深淺色">◐</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ============================================================ 基金比較 -->
+  <section class="panel" id="panel-compare" role="tabpanel" aria-labelledby="tab-compare">
+    <div class="page-head">
+      <div>
+        <h2>基金比較</h2>
+        <p id="compareCount">—</p>
+      </div>
+      <div class="page-head__actions">
+        <button class="btn" id="btnPreviewCompare">預覽比較表 PDF</button>
+        <button class="btn btn--primary" id="btnPrintCompare">輸出比較表 PDF</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card__body" style="display:flex;flex-direction:column;gap:14px">
+        <div class="chips" id="catChips"></div>
+        <div class="toolbar">
+          <div class="field" style="flex:1;min-width:220px">
+            <label for="searchBox">搜尋基金名稱、投資方向或持股</label>
+            <input class="input" id="searchBox" type="search" placeholder="例如：台積電、月配、科技">
+          </div>
+          <div class="field">
+            <label for="rrFilter">風險等級</label>
+            <select class="select" id="rrFilter">
+              <option value="all">全部 RR</option>
+              <option value="2">RR2</option><option value="3">RR3</option>
+              <option value="4">RR4</option><option value="5">RR5</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="payoutFilter">現金流</label>
+            <select class="select" id="payoutFilter">
+              <option value="all">全部</option>
+              <option value="income">配息型</option>
+              <option value="accum">累積型</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__head">
+        <h3>表列基金</h3>
+        <span class="hint">點欄位標題可排序　·　報酬率標記 <b>*</b> 表示該年期無資料，已沿用較短年期</span>
+      </div>
+      <div class="table-scroll" style="max-height:70vh;overflow-y:auto">
+        <div id="compareTable"></div>
+      </div>
+    </div>
+
+    <div id="comparePreviewWrap" hidden style="margin-top:18px">
+      <div class="card">
+        <div class="card__head"><h3>比較表 PDF 預覽</h3><span class="hint">A4 直式，依分類分頁，每頁 3 檔</span></div>
+        <div class="card__body">
+          <div class="sheet-stage" id="comparePreview"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 配置試算 -->
+  <section class="panel" id="panel-allocate" role="tabpanel" hidden>
+    <div class="page-head">
+      <div>
+        <h2>配置試算</h2>
+        <p>調整比例即時重算配息與資產成長，結果直接反映到建議書。</p>
+      </div>
+    </div>
+
+    <div class="layout-2col">
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <div class="card">
+          <div class="card__head"><h3>配置標的</h3><span class="hint">比例可不滿 100%，系統會依相對比重換算</span></div>
+          <div class="card__body">
+            <div id="allocRows"></div>
+            <div class="total-bar" id="totalBar"></div>
+            <div class="toolbar" style="margin-top:14px">
+              <select class="select" id="quickAdd" style="flex:1;min-width:200px" aria-label="快速加入標的"></select>
+              <button class="btn" id="btnEqualize">平均分配</button>
+              <button class="btn" id="btnNormalize">調整為 100%</button>
+              <button class="btn btn--ghost" id="btnClearPlan">清空</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__head">
+            <h3>預估成效</h3>
+            <span class="hint">各年期採該年期年化報酬率推算，非單一固定報酬率</span>
+          </div>
+          <div class="card__body" style="display:flex;flex-direction:column;gap:16px">
+            <div class="kpi-grid" id="kpiRow"></div>
+            <div class="chart-stack" id="previewCharts"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <aside style="display:flex;flex-direction:column;gap:16px">
+        <div class="card">
+          <div class="card__head"><h3>建議書抬頭</h3></div>
+          <div class="card__body">
+            <div class="form-grid">
+              <div class="field">
+                <label for="planClient">客戶姓名</label>
+                <input class="input" id="planClient" type="text" placeholder="王大明">
+              </div>
+              <div class="field">
+                <label for="planAdvisor">承辦顧問</label>
+                <input class="input" id="planAdvisor" type="text" placeholder="李顧問">
+              </div>
+              <div class="field" style="grid-column:1/-1">
+                <label for="planName">投資方案名稱</label>
+                <input class="input" id="planName" type="text" placeholder="平衡型策略">
+              </div>
+              <div class="field" style="grid-column:1/-1">
+                <label for="planAmount">投資金額（NT$）</label>
+                <input class="input input--num" id="planAmount" type="number" min="0" step="100000">
+              </div>
+              <div class="field" style="grid-column:1/-1">
+                <label for="planFx">美元匯率（僅供換算參考）</label>
+                <input class="input input--num" id="planFx" type="number" min="0" step="0.01">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__head"><h3>配息處理方式</h3></div>
+          <div class="card__body" style="display:flex;flex-direction:column;gap:10px">
+            <label style="display:flex;gap:9px;align-items:flex-start;cursor:pointer">
+              <input type="radio" name="mode" value="total" style="margin-top:4px">
+              <span>
+                <b>配息再投入（總報酬）</b>
+                <span class="muted" style="display:block;font-size:12.5px">配息滾入本金，資產成長最快。與一般平台的績效表達方式一致。</span>
+              </span>
+            </label>
+            <label style="display:flex;gap:9px;align-items:flex-start;cursor:pointer">
+              <input type="radio" name="mode" value="payout" style="margin-top:4px">
+              <span>
+                <b>配息領出</b>
+                <span class="muted" style="display:block;font-size:12.5px">客戶每月實領現金，本金僅以「總報酬扣除配息率」成長，另計累計已領配息。</span>
+              </span>
+            </label>
+            <div class="notice notice--info" style="margin-top:4px">
+              <span class="notice__mark">i</span>
+              <span>客戶若真的按月把配息花掉，用「配息領出」才不會高估未來本金。</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============================================================== 建議書 -->
+  <section class="panel" id="panel-report" role="tabpanel" hidden>
+    <div class="page-head">
+      <div>
+        <h2>建議書</h2>
+        <p>A4 直式，所見即所得。輸出時請在列印視窗選擇「另存為 PDF」，邊界選「無」。</p>
+      </div>
+      <div class="page-head__actions">
+        <button class="btn" id="btnGoAllocate">回到配置試算</button>
+        <button class="btn btn--primary" id="btnPrintReport">輸出建議書 PDF</button>
+      </div>
+    </div>
+
+    <div class="sheet-stage" id="reportPreview"></div>
+  </section>
+
+  <!-- ============================================================ 資料維護 -->
+  <section class="panel" id="panel-data" role="tabpanel" hidden>
+    <div class="page-head">
+      <div>
+        <h2>資料維護</h2>
+        <p>所有修改自動存在這台電腦的瀏覽器裡，不會上傳到任何地方。</p>
+      </div>
+    </div>
+
+    <div class="notice" style="margin-bottom:16px">
+      <span class="notice__mark">！</span>
+      <span>
+        <b>淨值、RR 與前五大持股</b>取自 2026/08/10 版比較表，屬公告事實；
+        <b>年化配息率與各年期報酬率是預設假設值</b>，直接決定建議書上的月領息與資產預估。
+        提供給客戶前，請務必依最新月報或平台資料在本頁覆寫。
+      </span>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card__head"><h3>批次更新</h3><span class="hint">從 Excel 或平台複製後直接貼上，一行一檔</span></div>
+      <div class="card__body" style="display:flex;flex-direction:column;gap:12px">
+        <div class="form-grid">
+          <div class="field">
+            <label for="navAsOf">淨值資料基準日</label>
+            <input class="input" id="navAsOf" type="date">
+          </div>
+        </div>
+        <div class="field">
+          <label for="pasteBox">貼上更新（欄位順序：名稱或代碼、淨值、淨值日、年化配息率；用 Tab 或逗號分隔）</label>
+          <textarea class="input" id="pasteBox" rows="5" spellcheck="false"
+            placeholder="安聯收益成長 AMg7	8.8629	2026/08/11	9.5&#10;0050	102.85	2026/08/11	2.8&#10;QQQ	723.03	2026/08/11"></textarea>
+        </div>
+        <div class="toolbar">
+          <button class="btn btn--primary" id="btnApplyPaste">套用貼上的資料</button>
+          <button class="btn" id="btnExport">匯出備份 JSON</button>
+          <label class="btn" for="fileImport" style="margin:0">匯入備份 JSON</label>
+          <input type="file" id="fileImport" accept="application/json,.json" hidden>
+          <button class="btn btn--ghost" id="btnReset" style="margin-left:auto">回復預設值</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__head">
+        <h3>逐筆編輯</h3>
+        <span class="hint">套用「基金比較」分頁的篩選條件　·　空白代表無資料</span>
+      </div>
+      <div class="table-scroll" style="max-height:70vh;overflow-y:auto">
+        <div id="dataTable"></div>
+      </div>
+    </div>
+  </section>
+
+  <p class="status-line" id="statusLine" role="status" aria-live="polite" style="margin-top:16px"></p>
+</main>
+
+<!-- 列印時只有這個容器會出現在紙上 -->
+<div id="printRoot" aria-hidden="true"></div>
+
+<script src="assets/funds.js"></script>
+<script src="assets/charts.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
