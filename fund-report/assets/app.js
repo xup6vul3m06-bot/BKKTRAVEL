@@ -1059,14 +1059,32 @@
 
   function exportJSON() {
     var payload = { exportedAt: new Date().toISOString(), meta: state.meta, plan: state.plan, funds: state.funds };
-    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    var text = JSON.stringify(payload, null, 2);
+    var name = '基金資料備份_' + todayISO() + '.json';
+
+    /* 線上版的頁面沒有直接存檔權限，必須透過瀏覽器代為詢問使用者 */
+    var api = window.claude && window.claude.downloads;
+    if (api) {
+      api.save({ filename: name, data: text }).then(function () {
+        flash('已匯出備份檔 ' + name);
+      })['catch'](function (err) {
+        var code = err && err.code;
+        if (code === 'declined') flash('已取消匯出。');
+        else if (code === 'rate_limited') flash('剛剛已經有一個存檔視窗，請稍候再試。');
+        else if (code === 'too_large') flash('資料超過 16 MB，無法匯出，請先刪除不需要的標的。');
+        else flash('這個環境無法直接存檔。請改用完整版或本機檔案匯出備份。');
+      });
+      return;
+    }
+
+    var blob = new Blob([text], { type: 'application/json' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = '基金資料備份_' + todayISO() + '.json';
+    a.download = name;
     document.body.appendChild(a);
     a.click();
     setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
-    flash('已匯出備份檔。');
+    flash('已匯出備份檔 ' + name);
   }
 
   function importJSON(file) {
