@@ -1,0 +1,63 @@
+{
+  "updatedAt": "2026-08-14T01:06:34.656Z",
+  "note": "僅涵蓋公開掛牌 ETF。境外基金無可穩定存取的公開來源，請用網站的「貼上更新」維護。",
+  "problems": [],
+  "quotes": {
+    "tw-0050": {
+      "price": 106.7,
+      "date": "2026-08-13",
+      "currency": "TWD",
+      "kind": "收盤價",
+      "source": "臺灣證券交易所 OpenAPI",
+      "symbol": "0050"
+    },
+    "tw-006208": {
+      "price": 244.4,
+      "date": "2026-08-13",
+      "currency": "TWD",
+      "kind": "收盤價",
+      "source": "臺灣證券交易所 OpenAPI",
+      "symbol": "006208"
+    },
+    "tw-0056": {
+      "price": 53,
+      "date": "2026-08-13",
+      "currency": "TWD",
+      "kind": "收盤價",
+      "source": "臺灣證券交易所 OpenAPI",
+      "symbol": "0056"
+    },
+    "tw-00981a": {
+      "price": 29.95,
+      "date": "2026-08-13",
+      "currency": "TWD",
+      "kind": "收盤價",
+      "source": "臺灣證券交易所 OpenAPI",
+      "symbol": "00981A"
+    },
+    "us-qqq": {
+      "price": 732.07,
+      "date": "2026-08-13",
+      "currency": "USD",
+      "kind": "收盤價",
+      "source": "Yahoo Finance",
+      "symbol": "QQQ"
+    },
+    "us-spy": {
+      "price": 777.88,
+      "date": "2026-08-13",
+      "currency": "USD",
+      "kind": "收盤價",
+      "source": "Yahoo Finance",
+      "symbol": "SPY"
+    },
+    "us-ivv": {
+      "price": 781.47,
+      "date": "2026-08-13",
+      "currency": "USD",
+      "kind": "收盤價",
+      "source": "Yahoo Finance",
+      "symbol": "IVV"
+    }
+  }
+}
