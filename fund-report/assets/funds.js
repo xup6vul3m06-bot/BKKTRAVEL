@@ -45,8 +45,8 @@ window.CATEGORIES = [
 ];
 
 window.DEFAULT_META = {
+  /* 掛牌 ETF 由 GitHub Actions 每日覆寫，此處僅為首次載入的預設基準日 */
   navAsOf: '2026-08-10',
-  navNote: '淨值：截至 2026/08/10 最新可得公告｜持股：最近一期公開月報',
   rrNote: 'RR 依台灣銷售平台常用分級；不同通路可能略有差異',
   fxUSDTWD: 29.5
 };

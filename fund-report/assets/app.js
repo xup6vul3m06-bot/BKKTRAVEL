@@ -105,6 +105,79 @@
     }, 250);
   }
 
+  /* ==========================================================================
+     自動更新的價格
+     -----------------------------------------------------------------------
+     由 GitHub Actions 每日抓取後寫入 data/nav.json（同網域，沒有跨網域問題）。
+     單一檔案版本則由打包程式把同一份資料塞成 window.NAV_SNAPSHOT。
+     兩者都拿不到時就沿用 funds.js 的內建值，功能不受影響。
+     ====================================================================== */
+
+  /* 手動改過的值就不再是自動抓來的，標記必須拿掉，否則畫面會說謊。
+     （下一次自動更新仍會覆蓋這幾檔掛牌 ETF，這是每日更新的預期行為。）*/
+  function clearAutoTag(f) {
+    delete f.navSource;
+    delete f.navKind;
+  }
+
+  function applyNavSnapshot(snap) {
+    if (!snap || !snap.quotes) return 0;
+    var n = 0;
+    Object.keys(snap.quotes).forEach(function (id) {
+      var q = snap.quotes[id];
+      var f = fundById(id);
+      if (!f || typeof q.price !== 'number') return;
+      f.nav = q.price;
+      f.navDate = q.date;
+      f.navKind = q.kind || '收盤價';
+      f.navSource = q.source || '自動更新';
+      n++;
+    });
+    state.meta.navAuto = { updatedAt: snap.updatedAt, count: n, problems: snap.problems || [] };
+    /* 自動更新的日期比手動填的可靠，讓文件基準日跟著走 */
+    var dates = Object.keys(snap.quotes)
+      .map(function (k) { return snap.quotes[k].date; })
+      .filter(Boolean).sort();
+    if (dates.length) state.meta.navAsOf = dates[dates.length - 1];
+    return n;
+  }
+
+  function loadNavSnapshot() {
+    if (window.NAV_SNAPSHOT) {
+      applyNavSnapshot(window.NAV_SNAPSHOT);
+      return Promise.resolve(true);
+    }
+    /* file:// 沒有同網域可言，直接跳過，不要在主控台留下嚇人的錯誤 */
+    if (location.protocol === 'file:') return Promise.resolve(false);
+
+    return fetch('data/nav.json', { cache: 'no-cache' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (snap) { return applyNavSnapshot(snap) > 0; })
+      ['catch'](function () { return false; });
+  }
+
+  function renderNavStatus() {
+    var host = $('#navStatus');
+    if (!host) return;
+    host.textContent = '';
+    var auto = state.meta.navAuto;
+    if (!auto || !auto.count) {
+      host.appendChild(h('span', { class: 'dot dot--idle' }));
+      host.appendChild(h('span', { text: '目前使用內建淨值。放上 GitHub Pages 後，每日自動更新才會生效。' }));
+      return;
+    }
+    var when = new Date(auto.updatedAt);
+    host.appendChild(h('span', { class: 'dot' }));
+    host.appendChild(h('span', {
+      text: '已自動更新 ' + auto.count + ' 檔掛牌 ETF 的收盤價　·　最後更新 ' +
+            when.getFullYear() + '/' + (when.getMonth() + 1) + '/' + when.getDate() + ' ' +
+            String(when.getHours()).padStart(2, '0') + ':' + String(when.getMinutes()).padStart(2, '0')
+    }));
+    if (auto.problems && auto.problems.length) {
+      host.appendChild(h('span', { class: 'muted', text: '（' + auto.problems.length + ' 項未更新）' }));
+    }
+  }
+
   function fundById(id) {
     for (var i = 0; i < state.funds.length; i++) if (state.funds[i].id === id) return state.funds[i];
     return null;
@@ -258,8 +331,9 @@
 
   function navHTML(f) {
     if (f.nav === null || f.nav === undefined) return '<span class="muted">待平台核對</span>';
+    var tag = f.navSource ? '<br><span class="src-tag">自動・' + esc(f.navKind || '收盤價') + '</span>' : '';
     return '<b>' + f.nav.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 }) +
-           '</b> ' + f.currency + '<br><span class="muted">' + fmtDate(f.navDate) + '</span>';
+           '</b> ' + f.currency + '<br><span class="muted">' + fmtDate(f.navDate) + '</span>' + tag;
   }
 
   function renderCompare() {
@@ -460,75 +534,35 @@
     var host = $('#previewCharts');
     host.textContent = '';
     if (!res.items.length) {
-      host.appendChild(h('div', { class: 'empty', text: '加入標的後即可預覽成長曲線與配置結構。' }));
+      host.appendChild(h('div', { class: 'empty', text: '加入標的後即可預覽成長軌跡與配置結構。' }));
       return;
     }
 
-    var topRow = h('div', { class: 'chart-grid' });
-    host.appendChild(topRow);
-
-    var lineBox = h('div', { class: 'chart-box' }, [
-      h('h4', { text: '預估資產價值曲線' }),
-      h('div', { class: 'chart-sub', text: state.plan.mode === 'total' ? '配息再投入（總報酬）' : '配息領出：本金部位＋累計已領配息' })
+    /* 畫面預覽與建議書用同一套視覺語言，避免「螢幕好看、印出來不一樣」 */
+    var areaBox = h('div', { class: 'chart-box' }, [
+      h('h4', { text: '預估資產成長軌跡' }),
+      h('div', { class: 'chart-sub', text:
+        '下層為投入本金，上層為預估獲利　·　' +
+        (state.plan.mode === 'total' ? '配息再投入（總報酬）' : '配息領出：本金部位＋累計已領配息') })
     ]);
-    var lineSvg = h('div', {});
-    lineBox.appendChild(lineSvg);
-    topRow.appendChild(lineBox);
-    window.Charts.line(lineSvg, {
-      data: res.projections.map(function (p) {
-        return { label: p.years + 'Y', value: p.total, note: '年化 ' + pct(p.cagr, 1) };
-      }),
-      baseline: res.amount
-    });
+    var areaMount = h('div', {});
+    areaBox.appendChild(areaMount);
+    host.appendChild(areaBox);
 
-    var barBox = h('div', { class: 'chart-box' }, [
-      h('h4', { text: '累積獲利結構圖' }),
-      h('div', { class: 'chart-sub', text: '投入本金與預估獲利的組成' })
-    ]);
-    var barSvg = h('div', {});
-    barBox.appendChild(barSvg);
-    topRow.appendChild(barBox);
-    buildStack(barSvg, barBox, res);
-
-    var donutRow = h('div', { class: 'chart-grid chart-grid--donuts' });
-    host.appendChild(donutRow);
-
-    ['assetClass', 'region', 'currency'].forEach(function (key) {
-      var titles = { assetClass: '資產類別', region: '投資區域', currency: '幣別比例' };
-      var slices = groupBy(res, key);
-      var box = h('div', { class: 'chart-box' }, [
-        h('h4', { text: titles[key] }),
-        h('div', { class: 'chart-sub', text: '依投資金額占比' })
-      ]);
-      var svgBox = h('div', {});
-      box.appendChild(svgBox);
-      donutRow.appendChild(box);
-      window.Charts.donut(svgBox, { slices: slices, height: 168 });
-      window.Charts.legend(box, slices.map(function (s) {
-        return { label: s.label, color: s.color, value: (s.value / res.amount * 100).toFixed(1) + '%' };
-      }));
-    });
-  }
-
-  function buildStack(mount, box, res, height) {
-    var series;
-    if (state.plan.mode === 'total') {
-      series = [
-        { name: '投入本金', color: 'var(--series-1)', values: res.projections.map(function () { return res.amount; }) },
-        { name: '預估獲利', color: 'var(--series-2)', values: res.projections.map(function (p) { return Math.max(0, p.gain); }) }
-      ];
-    } else {
-      series = [
-        { name: '投入本金', color: 'var(--series-1)', values: res.projections.map(function () { return res.amount; }) },
-        { name: '資本增值', color: 'var(--series-2)', values: res.projections.map(function (p) { return Math.max(0, p.capital - res.amount); }) },
-        { name: '累計已領配息', color: 'var(--series-3)', values: res.projections.map(function (p) { return p.cumIncome; }) }
-      ];
-    }
-    window.Charts.stacked(mount, {
+    var series = growthSeries(res);
+    window.Charts.area(areaMount, {
       labels: res.projections.map(function (p) { return p.years + 'Y'; }),
-      series: series, height: height
+      series: series, width: 820, height: 200
     });
-    window.Charts.legend(box, series.map(function (s) { return { label: s.name, color: s.color }; }));
+    window.Charts.legend(areaBox, series.map(function (s) { return { label: s.name, color: s.color }; }));
+    areaBox.appendChild(milestoneRow(res));
+
+    var spreadBox = h('div', { class: 'chart-box' }, [
+      h('h4', { text: '風險分散度' }),
+      h('div', { class: 'chart-sub', text: '資產類別、投資區域與幣別的金額占比' })
+    ]);
+    spreadBox.appendChild(spreadBlock(res));
+    host.appendChild(spreadBox);
   }
 
   function renderAllocate() {
@@ -567,13 +601,25 @@
      建議書（A4）
      ====================================================================== */
 
+  /* 頁尾註記依實際基準日產生，避免與報頭的日期對不起來 */
+  function navNote() {
+    var auto = state.meta.navAuto;
+    return '淨值：截至 ' + fmtDateFull(state.meta.navAsOf) + ' 最新可得' +
+           (auto && auto.count ? '（掛牌 ETF 為自動更新收盤價）' : '公告') +
+           '｜持股：最近一期公開月報';
+  }
+
   function sheet(children, footNote, pageNo, pageTotal) {
     var body = h('div', { class: 'sheet__body' }, children);
-    /* 沒有風險警語的頁面（例如比較表）需要撐開空白，讓頁尾貼齊紙張底部 */
-    if (!body.querySelector('.disclaimer')) body.appendChild(h('div', { style: 'flex:1 1 auto' }));
+    /* 沒有風險警語的頁面（例如比較表）需要撐開空白，讓頁尾貼齊紙張底部。
+       但若頁面本身已有靠 margin-top:auto 沉底的區塊，再塞 spacer 會把空白
+       搶走，反而讓那個區塊浮在中間。 */
+    if (!body.querySelector('.disclaimer, .tips-close')) {
+      body.appendChild(h('div', { style: 'flex:1 1 auto' }));
+    }
     var s = h('div', { class: 'sheet' }, [body]);
     s.appendChild(h('div', { class: 'sheet__foot' }, [
-      h('span', { text: footNote || state.meta.navNote }),
+      h('span', { text: footNote || navNote() }),
       h('span', { class: 'pageno', text: pageNo && pageTotal ? pageNo + ' / ' + pageTotal : '' })
     ]));
     return s;
@@ -588,7 +634,7 @@
     var body = s.querySelector('.sheet__body');
     if (!body) return;
     body.style.zoom = '';
-    for (var pass = 0; pass < 3; pass++) {
+    for (var pass = 0; pass < 6; pass++) {
       var overflow = s.scrollHeight - A4_PX;
       if (overflow <= 1) break;
       var current = parseFloat(body.style.zoom) || 1;
@@ -604,28 +650,128 @@
     sheets.forEach(fitSheet);   /* 必須在進入 DOM 之後量測 */
   }
 
-  function docHeader() {
+
+  /* 報頭：客戶名字與「每月可領」是客戶第一眼會看的兩件事，其餘退居其後 */
+  function mastHead(res) {
     var now = new Date();
-    var stamp = now.getFullYear() + '/' + (now.getMonth() + 1) + '/' + now.getDate() + ' ' +
-      String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
-    return h('div', { class: 'doc-header' }, [
-      h('div', { class: 'doc-header__name', text: state.plan.client || '基金配置建議書' }),
-      h('div', { class: 'doc-header__row' }, [
-        h('div', { class: 'doc-header__meta', html:
-          '客戶：<b>' + esc(state.plan.client || '—') + '</b><span class="sep">|</span>' +
-          '承辦顧問：<b>' + esc(state.plan.advisor || '—') + '</b>' }),
-        h('div', { class: 'doc-header__dates', html:
-          '淨值基準：' + fmtDateFull(state.meta.navAsOf) + '<br>產出日期：' + stamp })
+    var stamp = now.getFullYear() + '/' + (now.getMonth() + 1) + '/' + now.getDate();
+    var p5 = projAt(res, 5), p10 = projAt(res, 10);
+
+    return h('div', { class: 'mast' }, [
+      h('div', { class: 'mast__id' }, [
+        h('div', { class: 'mast__eyebrow', text: '投資配置建議書' }),
+        h('div', { class: 'mast__name', text: state.plan.client || '未填客戶姓名' }),
+        h('div', { class: 'mast__rule' }),
+        h('div', { class: 'mast__meta', html:
+          '投資方案：<b>' + esc(state.plan.planName || '—') + '</b>' +
+          '<span class="sep">|</span>投資金額：<b>NT$ ' + num(res.amount) + '</b><br>' +
+          '承辦顧問：<b>' + esc(state.plan.advisor || '—') + '</b>' +
+          '<span class="sep">|</span>淨值基準 ' + fmtDateFull(state.meta.navAsOf) +
+          '<span class="sep">|</span>產出 ' + stamp })
+      ]),
+      h('div', { class: 'hero' }, [
+        h('div', { class: 'hero__label', text: '預估每月可領' }),
+        h('div', { class: 'hero__value', html: '<small>NT$</small>' + num(res.monthlyIncome) }),
+        h('div', { class: 'hero__foot', text:
+          '加權年化配息率 ' + pct(res.weightedYield) + '　·　' +
+          (state.plan.mode === 'total' ? '配息再投入試算' : '配息領出試算') }),
+        h('div', { class: 'hero__split' }, [
+          h('div', { class: 'hero__cell' }, [
+            h('div', { class: 'k', text: '5 年後資產' }),
+            h('div', { class: 'v', html: '<small>NT$</small>' + num(p5.total) }),
+            h('div', { class: 's', text: '年化 ' + pct(p5.cagr, 1) })
+          ]),
+          h('div', { class: 'hero__cell' }, [
+            h('div', { class: 'k', text: '10 年後資產' }),
+            h('div', { class: 'v', html: '<small>NT$</small>' + num(p10.total) }),
+            h('div', { class: 's', text: '年化 ' + pct(p10.cagr, 1) })
+          ])
+        ])
       ])
     ]);
   }
 
-  function docH(n, title, note) {
-    return h('div', { class: 'doc-h' }, [
-      h('span', { class: 'doc-h__n', text: n + '.' }),
-      h('span', { text: title }),
-      note ? h('span', { class: 'doc-h__note', text: note }) : null
+  function secHead(title, note) {
+    return h('div', { class: 'sec__head' }, [
+      h('span', { class: 'sec__title', text: title }),
+      note ? h('span', { class: 'sec__note', text: note }) : null
     ]);
+  }
+
+  /* 一條 100% 橫條就能看出組合的形狀，比逐列讀比例快得多 */
+  function compositionStrip(res) {
+    var strip = h('div', { class: 'compo' });
+    res.items.forEach(function (r) {
+      var pctv = r.share * 100;
+      strip.appendChild(h('div', {
+        class: 'compo__seg',
+        style: 'flex:' + pctv + ' 1 0; background:' + r.color,
+        title: r.fund.short + ' ' + pctv.toFixed(1) + '%',
+        text: pctv >= 7 ? pctv.toFixed(0) + '%' : ''
+      }));
+    });
+    return strip;
+  }
+
+  /* 資產類別／投資區域／幣別：水平長條比甜甜圈省空間，也比較好比長度 */
+  function spreadBlock(res, opts) {
+    opts = opts || {};
+    var titles = { assetClass: '資產類別', region: '投資區域', currency: '幣別' };
+    var wrap = h('div', { class: opts.rootClass || 'pspread' });
+
+    ['assetClass', 'region', 'currency'].forEach(function (key) {
+      var slices = groupBy(res, key);
+      var total = slices.reduce(function (s, x) { return s + x.value; }, 0) || 1;
+
+      var bar = h('div', { class: 'psp__bar' });
+      var keys = h('div', { class: 'psp__keys' });
+
+      slices.forEach(function (s) {
+        var share = (s.value / total) * 100;
+        bar.appendChild(h('div', {
+          class: 'psp__seg',
+          style: 'flex:' + share + ' 1 0; background:' + s.color,
+          title: s.label + ' ' + share.toFixed(1) + '%',
+          text: share >= 12 ? share.toFixed(0) + '%' : ''
+        }));
+        keys.appendChild(h('span', { class: 'psp__key' }, [
+          h('span', { class: 'psp__dot', style: 'background:' + s.color }),
+          s.label + ' ' + share.toFixed(1) + '%'
+        ]));
+      });
+
+      wrap.appendChild(h('div', {}, [
+        h('div', { class: 'psp__label', text: titles[key] }),
+        bar,
+        keys
+      ]));
+    });
+    return wrap;
+  }
+
+  /* 成長軌跡的堆疊層。兩種配息處理方式的分層不同。 */
+  function growthSeries(res) {
+    if (state.plan.mode === 'total') {
+      return [
+        { name: '投入本金', color: 'var(--series-2)', values: res.projections.map(function () { return res.amount; }), solid: true },
+        { name: '預估獲利', color: 'var(--series-1)', values: res.projections.map(function (p) { return Math.max(0, p.gain); }) }
+      ];
+    }
+    return [
+      { name: '投入本金', color: 'var(--series-2)', values: res.projections.map(function () { return res.amount; }), solid: true },
+      { name: '資本增值', color: 'var(--series-1)', values: res.projections.map(function (p) { return Math.max(0, p.capital - res.amount); }) },
+      { name: '累計已領配息', color: 'var(--series-3)', values: res.projections.map(function (p) { return p.cumIncome; }) }
+    ];
+  }
+
+  function milestoneRow(res) {
+    return h('div', { class: 'milestones' }, res.projections.map(function (p) {
+      return h('div', { class: 'ms' }, [
+        h('div', { class: 'ms__y', text: p.years + ' 年' }),
+        h('div', { class: 'ms__v', text: num(p.total) }),
+        h('div', { class: 'ms__g', text: (p.gain >= 0 ? '+' : '') + num(p.gain) })
+      ]);
+    }));
   }
 
   function buildReportSheets() {
@@ -633,47 +779,13 @@
     var sheets = [];
     if (!res.items.length) return sheets;
 
-    var p5 = projAt(res, 5), p10 = projAt(res, 10);
+    var totalPages = 2 + Math.ceil(res.items.length / APPENDIX_PER_PAGE);
 
     /* ------------------------------------------------- 第 1 頁：總覽 --- */
     var page1 = [];
-    page1.push(docHeader());
+    page1.push(mastHead(res));
 
-    page1.push(h('div', { class: 'doc-block' }, [
-      h('div', { class: 'ov-grid' }, [
-        h('div', {}, [
-          docH(1, '投資計畫總覽'),
-          h('div', { class: 'pcard' }, [
-            h('div', { class: 'pcard__label', text: '投資方案' }),
-            h('div', { class: 'pcard__plan', text: state.plan.planName || '—' }),
-            h('div', { class: 'pcard__label', text: '投資金額' }),
-            h('div', { class: 'pcard__amt', html: '<small>NT$</small>' + num(res.amount) })
-          ])
-        ]),
-        h('div', {}, [
-          docH(2, '預估成效分析', state.plan.mode === 'total' ? '配息再投入（總報酬）' : '配息領出'),
-          h('div', { class: 'ov-stats' }, [
-            h('div', { class: 'pstat pstat--key' }, [
-              h('div', { class: 'pstat__label', text: '預估月領息' }),
-              h('div', { class: 'pstat__value', html: '<small>NT$</small>' + num(res.monthlyIncome) }),
-              h('div', { class: 'pstat__foot', text: '加權年化配息率 ' + pct(res.weightedYield) })
-            ]),
-            h('div', { class: 'pstat' }, [
-              h('div', { class: 'pstat__label', text: '5年資產預估' }),
-              h('div', { class: 'pstat__value', html: '<small>NT$</small>' + num(p5.total) }),
-              h('div', { class: 'pstat__foot', text: '年化 ' + pct(p5.cagr, 1) })
-            ]),
-            h('div', { class: 'pstat' }, [
-              h('div', { class: 'pstat__label', text: '10年資產預估' }),
-              h('div', { class: 'pstat__value', html: '<small>NT$</small>' + num(p10.total) }),
-              h('div', { class: 'pstat__foot', text: '年化 ' + pct(p10.cagr, 1) })
-            ])
-          ])
-        ])
-      ])
-    ]));
-
-    /* 配置明細表 */
+    /* 配置一覽 */
     var rows = res.items.map(function (r) {
       return h('tr', {}, [
         h('td', { class: 'name' }, [
@@ -689,8 +801,9 @@
       ]);
     });
 
-    page1.push(h('div', { class: 'doc-block' }, [
-      docH(3, '配置明細表', '共 ' + res.items.length + ' 檔標的'),
+    page1.push(h('div', { class: 'sec' }, [
+      secHead('配置一覽', '共 ' + res.items.length + ' 檔標的'),
+      compositionStrip(res),
       h('table', { class: 'ptable' }, [
         h('thead', {}, [h('tr', {}, [
           h('th', { text: '標的名稱' }),
@@ -714,73 +827,56 @@
       ])
     ]));
 
-    /* 動能成長分析 */
-    var lineMount = h('div', {}), barMount = h('div', {});
-    var lineCard = h('div', { class: 'pchart' }, [
-      h('div', { class: 'pchart__title', text: '預估資產價值曲線' }),
-      h('div', { class: 'pchart__sub', text: state.plan.mode === 'total' ? '配息再投入（總報酬）' : '本金部位＋累計已領配息' }),
-      lineMount
+    /* 成長軌跡 */
+    var areaMount = h('div', {});
+    var areaCard = h('div', { class: 'pchart' }, [
+      h('div', { class: 'pchart__title', text: '預估資產成長軌跡' }),
+      h('div', { class: 'pchart__sub', text:
+        '面積下層為投入本金，上層為預估獲利；總高度即預估總值。各年期採該年期年化報酬率推算。' }),
+      areaMount
     ]);
-    var barCard = h('div', { class: 'pchart' }, [
-      h('div', { class: 'pchart__title', text: '累積獲利結構圖' }),
-      h('div', { class: 'pchart__sub', text: '投入本金與預估獲利的組成' }),
-      barMount
-    ]);
-    page1.push(h('div', { class: 'doc-block' }, [
-      docH(4, '動能成長分析', '各年期採該年期年化報酬率推算'),
-      h('div', { class: 'pchart-grid pchart-grid--2' }, [lineCard, barCard])
+    page1.push(h('div', { class: 'sec' }, [
+      secHead('資產成長預估', state.plan.mode === 'total' ? '配息再投入（總報酬）' : '配息領出：本金部位＋累計已領配息'),
+      areaCard,
+      milestoneRow(res)
     ]));
 
-    /* 區域分析 */
-    var donutCards = ['assetClass', 'region', 'currency'].map(function (key) {
-      var titles = { assetClass: '資產類別', region: '投資區域', currency: '幣別比例' };
-      var slices = groupBy(res, key);
-      var mount = h('div', {});
-      var card = h('div', { class: 'pchart' }, [
-        h('div', { class: 'pchart__title', text: titles[key] }),
-        h('div', { class: 'pchart__sub', text: '依投資金額占比' }),
-        mount
-      ]);
-      card._render = function () {
-        window.Charts.donut(mount, { slices: slices, maxWidth: 84 });
-        window.Charts.legend(card, slices.map(function (s) {
-          return { label: s.label, color: s.color, value: (s.value / res.amount * 100).toFixed(0) + '%' };
-        }));
-      };
-      return card;
-    });
-    page1.push(h('div', { class: 'doc-block' }, [
-      docH(5, '資產配置區域分析'),
-      h('div', { class: 'pchart-grid pchart-grid--3' }, donutCards)
+    /* 分散度 */
+    page1.push(h('div', { class: 'sec' }, [
+      secHead('風險分散度', '依投資金額占比'),
+      spreadBlock(res)
     ]));
 
     page1.push(disclaimerBlock(res));
 
-    var totalPages = 1 + Math.ceil(res.items.length / APPENDIX_PER_PAGE);
-    var s1 = sheet(page1, state.meta.navNote, 1, totalPages);
-    sheets.push(s1);
+    sheets.push(sheet(page1, navNote(), 1, totalPages));
 
     /* 圖表在節點建立後再繪，確保 CSS 變數已可解析 */
-    window.Charts.line(lineMount, {
-      data: res.projections.map(function (p) { return { label: p.years + 'Y', value: p.total, note: '年化 ' + pct(p.cagr, 1) }; }),
-      baseline: res.amount, height: 132
+    var series = growthSeries(res);
+    window.Charts.area(areaMount, {
+      labels: res.projections.map(function (p) { return p.years + 'Y'; }),
+      series: series, width: 900, height: 190
     });
-    buildStack(barMount, barCard, res, 132);
-    donutCards.forEach(function (c) { c._render(); });
+    window.Charts.legend(areaCard, series.map(function (s) { return { label: s.name, color: s.color }; }));
 
     /* --------------------------------------------- 第 2 頁起：持倉附錄 --- */
     var chunks = [];
-    for (var i = 0; i < res.items.length; i += APPENDIX_PER_PAGE) chunks.push(res.items.slice(i, i + APPENDIX_PER_PAGE));
+    for (var i = 0; i < res.items.length; i += APPENDIX_PER_PAGE) {
+      chunks.push(res.items.slice(i, i + APPENDIX_PER_PAGE));
+    }
 
     chunks.forEach(function (chunk, ci) {
       var cards = chunk.map(function (r) {
         return h('div', { class: 'hold-card' }, [
           h('div', { class: 'hold-card__head' }, [
             h('h4', { text: r.fund.name }),
-            h('div', { class: 'sub', text: '持股基準日 ' + fmtDateFull(r.fund.holdingsDate) + '　配置 ' + (r.share * 100).toFixed(1) + '%' })
+            h('div', { class: 'sub', text: '持股基準日 ' + fmtDateFull(r.fund.holdingsDate) + '　·　配置 ' + (r.share * 100).toFixed(1) + '%' })
           ]),
           h('table', {}, [
-            h('thead', {}, [h('tr', {}, [h('th', { text: '標的名稱' }), h('th', { class: 'num', style: 'text-align:right', text: '權重' })])]),
+            h('thead', {}, [h('tr', {}, [
+              h('th', { text: '標的名稱' }),
+              h('th', { class: 'num', style: 'text-align:right', text: '權重' })
+            ])]),
             h('tbody', {}, (r.fund.holdings || []).map(function (x) {
               return h('tr', {}, [h('td', { text: x.name }), h('td', { class: 'num', text: x.weight.toFixed(2) + '%' })]);
             }))
@@ -788,16 +884,113 @@
         ]);
       });
 
-      var body = [
-        docH(6, '報告附件：近期標的最大持倉明細' + (chunks.length > 1 ? '（' + (ci + 1) + '/' + chunks.length + '）' : '')),
-        h('p', { class: 'muted', style: 'font-size:8pt;margin-bottom:3mm', text: '此頁為投資組合中各標的之核心持股權重明細，資料取自最近一期公開月報或每日持倉。' }),
-        h('div', { class: 'hold-grid' }, cards)
-      ];
-      sheets.push(sheet(body, state.meta.navNote, ci + 2, totalPages));
+      sheets.push(sheet([
+        h('div', { class: 'sec' }, [
+          secHead('持倉明細' + (chunks.length > 1 ? '（' + (ci + 1) + '／' + chunks.length + '）' : ''),
+                  '資料取自最近一期公開月報或每日持倉'),
+          h('p', { style: 'font-size:7.8pt;color:var(--p-ink-2);margin-bottom:3mm', text:
+            '這一頁列出您的組合中，各標的最大的五檔持股。同一家公司出現在多檔基金裡是正常的，' +
+            '但如果同一檔股票在整體組合中重複出現，實際集中度會比單看一檔基金更高。' }),
+          h('div', { class: 'hold-grid' }, cards)
+        ])
+      ], navNote(), ci + 2, totalPages));
     });
+
+    /* ------------------------------------------------ 最後一頁：小叮嚀 --- */
+    sheets.push(buildTipsSheet(totalPages));
 
     return sheets;
   }
+
+  /* ==========================================================================
+     長期持有小叮嚀（建議書背面）
+     ====================================================================== */
+
+  var LONG_TERM_TIPS = [
+    {
+      t: '時間比時機更重要',
+      b: '長期報酬往往集中在少數幾個大漲的交易日。想「等跌一點再進場」而剛好錯過那幾天，' +
+         '損失通常大於你原本想避開的那段跌幅。<b>留在市場裡的時間，才是報酬的來源。</b>'
+    },
+    {
+      t: '帳面虧損不是真的虧損',
+      b: '淨值下跌時，你持有的<b>單位數一張也沒有少</b>。只有在按下贖回的那一刻，' +
+         '帳上的數字才會變成真正實現的損益。'
+    },
+    {
+      t: '配息不等於獲利',
+      b: '配息有可能一部分來自本金。判斷一檔基金好不好，要看<b>「淨值成長＋配息」的總報酬</b>，' +
+         '而不是只比較配息率高低。配息率特別高的，更要看淨值是不是在往下走。'
+    },
+    {
+      t: '定期檢視，不是定期更換',
+      b: '建議一年檢視一到兩次即可。頻繁轉換會付出申購費、買賣價差與空手期，' +
+         '<b>這些成本不會出現在任何一張報酬率表上</b>，卻會實實在在扣掉你的報酬。'
+    },
+    {
+      t: '別用短期要用的錢投資',
+      b: '六個月的生活費、一年內確定要用的錢（學費、頭期款、購屋款）請留在活存。' +
+         '<b>被迫在低點贖回，是成本最高的一種賣出。</b>'
+    },
+    {
+      t: '美元計價部位有兩個變數',
+      b: '美元計價基金換算成台幣的價值，同時受<b>基金淨值</b>與<b>匯率</b>影響。' +
+         '短期的匯率波動不代表基金本身表現不好，兩者要分開看。'
+    },
+    {
+      t: '下跌時的扣款最有價值',
+      b: '如果採定期定額，同樣的金額在低點會買到<b>更多單位</b>。' +
+         '市場回升時，正是這些在低點累積的單位帶來報酬。下跌時停扣，等於放棄了這一段。'
+    },
+    {
+      t: '看得懂才抱得住',
+      b: '如果你說不出手上這檔基金<b>靠什麼賺錢</b>，下跌時就很難撐得住。' +
+         '任何一檔標的有疑問，隨時找您的顧問問清楚，這比自己猜測後恐慌贖回好得多。'
+    }
+  ];
+
+  function buildTipsSheet(totalPages) {
+    var body = [
+      h('div', { class: 'tips-lead' }, [
+        h('h3', { text: '給' + (state.plan.client ? '　' + state.plan.client + '　' : '您') + '的長期持有叮嚀' }),
+        h('p', { text:
+          '前面幾頁的數字，全部建立在「長期持有」這個前提上。這份配置的預估成效，' +
+          '只有在您能撐過中間必然出現的波動時才會兌現。以下八件事，' +
+          '是實務上最常見、也最容易讓長期計畫中途夭折的地方。' })
+      ]),
+      h('div', { class: 'tips-grid' }, LONG_TERM_TIPS.map(function (tip, i) {
+        return h('div', { class: 'tip' }, [
+          h('div', { class: 'tip__n', text: String(i + 1).padStart(2, '0') }),
+          h('div', {}, [
+            h('div', { class: 'tip__title', text: tip.t }),
+            h('div', { class: 'tip__body', html: tip.b })
+          ])
+        ]);
+      })),
+      h('div', { class: 'tips-close' }, [
+        h('div', { class: 'tips-close__note', html:
+          '<b>市場下跌時，請先聯絡您的顧問，再決定要不要動。</b><br>' +
+          '多數讓長期報酬打折的決定，都是在情緒最強烈的那幾天做出來的。' +
+          '一通電話的時間，通常就足以把「想賣掉」和「該賣掉」分開。' }),
+        h('div', { class: 'sign' }, [
+          h('div', { class: 'sign__row' }, [
+            h('span', { class: 'sign__k', text: '承辦顧問' }),
+            h('span', { class: 'sign__val', text: state.plan.advisor || '' })
+          ]),
+          h('div', { class: 'sign__row' }, [
+            h('span', { class: 'sign__k', text: '聯絡方式' }),
+            h('span', { class: 'sign__line' })
+          ]),
+          h('div', { class: 'sign__row' }, [
+            h('span', { class: 'sign__k', text: '下次檢視' }),
+            h('span', { class: 'sign__line' })
+          ])
+        ])
+      ])
+    ];
+    return sheet(body, '本頁為投資觀念提醒，不構成個別投資建議', totalPages, totalPages);
+  }
+
 
   function disclaimerBlock(res) {
     var items = [
@@ -855,16 +1048,26 @@
 
     /* 封面 */
     sheets.push(sheet([
-      h('div', { class: 'doc-header' }, [
-        h('div', { class: 'doc-header__name', text: '基金投資方向、RR值與前五大持股' }),
-        h('div', { class: 'doc-header__row' }, [
-          h('div', { class: 'doc-header__meta', html:
-            '淨值基準：截至 <b>' + fmtDateFull(state.meta.navAsOf) + '</b> 最新可得公告<span class="sep">|</span>持股基準：最近一期公開月報' }),
-          h('div', { class: 'doc-header__dates', html: '收錄 ' + list.length + ' 檔<br>' + fmtDateFull(todayISO()) + ' 產出' })
+      h('div', { class: 'mast' }, [
+        h('div', { class: 'mast__id' }, [
+          h('div', { class: 'mast__eyebrow', text: '基金比較表' }),
+          h('div', { class: 'mast__name', style: 'font-size:19pt', text: '投資方向、RR 值與前五大持股' }),
+          h('div', { class: 'mast__rule' }),
+          h('div', { class: 'mast__meta', html:
+            '淨值基準：<b>' + fmtDateFull(state.meta.navAsOf) + '</b> 最新可得公告' +
+            '<span class="sep">|</span>持股基準：最近一期公開月報<br>' +
+            '收錄 <b>' + list.length + '</b> 檔　·　產出 ' + fmtDateFull(todayISO()) })
+        ]),
+        h('div', { class: 'hero' }, [
+          h('div', { class: 'hero__label', text: '收錄檔數' }),
+          h('div', { class: 'hero__value', text: String(list.length) }),
+          h('div', { class: 'hero__foot', text: '涵蓋 ' + window.CATEGORIES.filter(function (c) {
+            return list.some(function (f) { return f.cat === c.id; });
+          }).length + ' 個分類' })
         ])
       ]),
-      h('div', { class: 'doc-block' }, [
-        docH(1, '本份比較表的閱讀方式'),
+      h('div', { class: 'sec' }, [
+        secHead('本份比較表的閱讀方式'),
         h('table', { class: 'ptable' }, [
           h('thead', {}, [h('tr', {}, [
             h('th', { text: '欄位' }), h('th', { text: '基準' }), h('th', { text: '說明' })
@@ -881,8 +1084,8 @@
           ])
         ])
       ]),
-      h('div', { class: 'doc-block' }, [
-        docH(2, '收錄分類'),
+      h('div', { class: 'sec' }, [
+        secHead('收錄分類'),
         h('table', { class: 'ptable' }, [
           h('thead', {}, [h('tr', {}, [h('th', { text: '分類' }), h('th', { class: 'num', text: '檔數' }), h('th', { text: '判讀重點' })])]),
           h('tbody', {}, window.CATEGORIES.map(function (c) {
@@ -936,7 +1139,7 @@
           }))
         ])
       ];
-      sheets.push(sheet(body, state.meta.navNote + '｜' + state.meta.rrNote, gi + 2, total));
+      sheets.push(sheet(body, navNote() + '｜' + state.meta.rrNote, gi + 2, total));
     });
 
     return sheets;
@@ -1003,11 +1206,11 @@
           h('div', { class: 'fund-name', text: f.name }),
           h('div', { class: 'fund-meta', text: catName(f.cat) + '｜' + f.currency + '｜' + f.payout })
         ]),
-        h('td', { class: 'num w-nav' }, [numInput(f, function () { return f.nav; }, function (v) { f.nav = v; })]),
+        h('td', { class: 'num w-nav' }, [numInput(f, function () { return f.nav; }, function (v) { f.nav = v; clearAutoTag(f); })]),
         h('td', { class: 'w-date' }, [h('input', {
           class: 'input', type: 'date', value: f.navDate || '',
           'aria-label': f.short + ' 淨值日',
-          onchange: function (e) { f.navDate = e.target.value; saveState(); renderCompare(); }
+          onchange: function (e) { f.navDate = e.target.value; clearAutoTag(f); saveState(); renderCompare(); }
         })]),
         h('td', { class: 'num w-rr' }, [numInput(f, function () { return f.rr; }, function (v) { f.rr = v; })]),
         h('td', { class: 'num w-pct' }, [numInput(f, function () { return f.yield; }, function (v) { f.yield = v || 0; })]),
@@ -1036,7 +1239,7 @@
       })[0];
       if (!f) { miss.push(key); return; }
       var nav = Number(String(cells[1]).replace(/[^0-9.\-]/g, ''));
-      if (!isNaN(nav) && cells[1] !== '') f.nav = nav;
+      if (!isNaN(nav) && cells[1] !== '') { f.nav = nav; clearAutoTag(f); }
       if (cells[2]) {
         var d = cells[2].replace(/\//g, '-');
         if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(d)) {
@@ -1264,10 +1467,17 @@
   function init() {
     loadState();
     seedIfEmpty();
-    $('#navAsOf').value = state.meta.navAsOf;
     bindControls();
     renderAll();
     switchTab('compare');
+
+    loadNavSnapshot().then(function (applied) {
+      $('#navAsOf').value = state.meta.navAsOf;
+      renderNavStatus();
+      if (applied) { saveState(); renderAll(); }
+    });
+    $('#navAsOf').value = state.meta.navAsOf;
+    renderNavStatus();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

@@ -1,48 +1,56 @@
 /* =============================================================================
-   A4 文件樣式 — 建議書與比較表
+   A4 文件樣式 — 建議書、比較表、長期持有叮嚀
    .sheet 模擬紙張，因此固定使用淺色調（不隨深色模式反轉），
    螢幕預覽與列印輸出共用同一份規則，所見即所得。
    ========================================================================== */
 
 .sheet {
   /* 紙張自帶一組固定色票，與介面 token 脫鉤 */
-  --p-ink:      #14181C;
-  --p-ink-2:    #4A5058;
-  --p-ink-3:    #7A828A;
-  --p-rule:     #D9DCD8;
-  --p-rule-2:   #B9BDB8;
-  --p-navy:     #1C4470;
-  --p-navy-deep:#0E2338;
-  --p-navy-soft:#EDF2F8;
-  --p-brass:    #A87D2B;
+  --p-ink:      #241A13;
+  --p-ink-2:    #5A4C43;
+  --p-ink-3:    #8B7D73;
+  --p-rule:     #E5DACD;
+  --p-rule-2:   #CDBCA9;
+  --p-brand:    #C25A1A;
+  --p-brand-dk: #8A3A0F;
+  --p-brand-lt: #E89150;
+  --p-tint:     #FDF3E9;
+  --p-tint-2:   #F8E7D5;
+  --p-teal:     #1B6A65;
   --p-surface:  #FFFFFF;
-  --p-surface-2:#F7F8F5;
-  --p-up:       #C02B2B;
+  --p-surface-2:#FBF7F2;
+  --p-up:       #C0392B;
   --p-down:     #12764C;
 
   /* 紙張永遠是白的：圖表角色色與系列色在此固定為淺色版本，
      不隨介面深色模式反轉，否則列印會拿到深色系列色。 */
   --c-surface: #FFFFFF;
-  --c-grid:    #E7E9E5;
-  --c-axis:    #B9BDB8;
-  --c-ink:     #14181C;
-  --c-ink-2:   #4A5058;
-  --c-ink-3:   #7A828A;
-  --series-1: #2a78d6;  --series-2: #eb6834;  --series-3: #1baf7a;  --series-4: #eda100;
+  --c-grid:    #EFE7DC;
+  --c-axis:    #CDBCA9;
+  --c-ink:     #241A13;
+  --c-ink-2:   #5A4C43;
+  --c-ink-3:   #8B7D73;
+  --series-1: #eb6834;  --series-2: #2a78d6;  --series-3: #1baf7a;  --series-4: #eda100;
   --series-5: #e87ba4;  --series-6: #008300;  --series-7: #4a3aa7;  --series-8: #e34948;
 
   width: 210mm;
   min-height: 297mm;
-  padding: 13mm 15mm 11mm;
+  padding: 12mm 14mm 10mm;
   background: var(--p-surface);
   color: var(--p-ink);
   font-family: var(--font-ui);
   font-size: 9.5pt;
   line-height: 1.55;
-  box-shadow: 0 2px 10px rgba(14, 35, 56, .16);
+  box-shadow: 0 2px 12px rgba(94, 36, 9, .15);
   display: flex;
   flex-direction: column;
   position: relative;
+}
+
+.sheet::before {
+  content: "";
+  position: absolute; inset: 0 0 auto 0; height: 4.5mm;
+  background: linear-gradient(90deg, var(--p-brand-dk), var(--p-brand) 45%, var(--p-brand-lt));
 }
 
 .sheet__body {
@@ -52,86 +60,101 @@
   min-height: 0;
 }
 
-.sheet::before {
-  content: "";
-  position: absolute; inset: 0 0 auto 0; height: 4mm;
-  background: var(--p-navy);
+/* ============================================================ 報頭 ======= */
+
+.mast {
+  display: grid;
+  grid-template-columns: 1fr 78mm;
+  gap: 5mm;
+  align-items: stretch;
+  margin-bottom: 5mm;
 }
 
-/* ------------------------------------------------------------- 文件頁首 -- */
-
-.doc-header { border-bottom: 1.5px solid var(--p-ink); padding-bottom: 6px; margin-bottom: 3.2mm; }
-.doc-header__name {
-  font-family: var(--font-doc); font-size: 21pt; font-weight: 700;
-  color: var(--p-navy-deep); letter-spacing: .04em; line-height: 1.15;
+.mast__id { display: flex; flex-direction: column; justify-content: center; }
+.mast__eyebrow {
+  font-size: 7.5pt; color: var(--p-brand); font-weight: 700;
+  letter-spacing: .22em; text-transform: uppercase; margin-bottom: 1.5mm;
 }
-.doc-header__row { display: flex; align-items: flex-end; gap: 16px; margin-top: 6px; }
-.doc-header__meta { font-size: 9pt; color: var(--p-ink-2); }
-.doc-header__meta b { color: var(--p-ink); font-weight: 700; }
-.doc-header__meta .sep { color: var(--p-rule-2); margin: 0 8px; }
-.doc-header__dates {
-  margin-left: auto; text-align: right; font-size: 8pt; color: var(--p-ink-3);
-  font-variant-numeric: tabular-nums; white-space: nowrap; line-height: 1.5;
+.mast__name {
+  font-family: var(--font-doc); font-size: 25pt; font-weight: 700;
+  color: var(--p-ink); letter-spacing: .04em; line-height: 1.1;
 }
+.mast__rule { height: 1.2mm; width: 22mm; background: var(--p-brand); margin: 2.4mm 0; }
+.mast__meta { font-size: 8.5pt; color: var(--p-ink-2); line-height: 1.7; }
+.mast__meta b { color: var(--p-ink); }
+.mast__meta .sep { color: var(--p-rule-2); margin: 0 6px; }
 
-/* ------------------------------------------------------------- 節次標題 -- */
-
-.doc-h {
-  display: flex; align-items: baseline; gap: 8px;
-  font-family: var(--font-doc); font-size: 12.5pt; color: var(--p-navy-deep);
-  margin: 0 0 2.5mm;
-}
-.doc-h__n {
-  font-family: var(--font-num); font-size: 10pt; font-weight: 700;
-  color: var(--p-brass); letter-spacing: .02em;
-}
-.doc-h__note { margin-left: auto; font-family: var(--font-ui); font-size: 8pt; color: var(--p-ink-3); font-weight: 400; }
-
-.doc-block { margin-bottom: 3.6mm; }
-.doc-block--tight { margin-bottom: 3.5mm; }
-
-/* ------------------------------------------------------- 總覽與成效卡 ---- */
-
-.ov-grid { display: grid; grid-template-columns: 1.15fr 2.4fr; gap: 4mm; align-items: stretch; }
-.ov-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; }
-
-.pcard {
-  border: 1px solid var(--p-rule); border-radius: 3px;
-  padding: 2.6mm 3.2mm; background: var(--p-surface-2);
+/* 主角數字：客戶第一眼要看到的是「每個月領多少」 */
+.hero {
+  background: var(--p-tint);
+  border: 1px solid var(--p-tint-2);
+  border-left: 1.6mm solid var(--p-brand);
+  border-radius: 2px;
+  padding: 3.4mm 4mm;
   display: flex; flex-direction: column; justify-content: center;
 }
-.pcard__label { font-size: 7.5pt; color: var(--p-ink-3); font-weight: 700; letter-spacing: .06em; }
-.pcard__plan { font-family: var(--font-doc); font-size: 14pt; color: var(--p-navy-deep); font-weight: 700; margin: 1mm 0 2mm; }
-.pcard__amt { font-size: 13pt; font-weight: 700; color: var(--p-ink); font-variant-numeric: tabular-nums; }
-.pcard__amt small { font-size: 8pt; color: var(--p-ink-3); margin-right: 2px; }
-
-.pstat { text-align: center; border: 1px solid var(--p-rule); border-radius: 3px; padding: 2.4mm 2mm; background: var(--p-surface); }
-.pstat__label { font-size: 8pt; color: var(--p-ink-2); font-weight: 700; }
-.pstat__value {
-  font-size: 13.5pt; font-weight: 700; color: var(--p-navy); margin-top: 1.2mm;
-  font-variant-numeric: tabular-nums; letter-spacing: -.01em;
+.hero__label { font-size: 8pt; color: var(--p-brand-dk); font-weight: 700; letter-spacing: .1em; }
+.hero__value {
+  font-size: 25pt; font-weight: 700; color: var(--p-brand-dk);
+  line-height: 1.1; letter-spacing: -.02em; font-variant-numeric: tabular-nums;
+  margin: .6mm 0;
 }
-.pstat__value small { font-size: 8.5pt; color: var(--p-ink-3); margin-right: 2px; font-weight: 600; }
-.pstat__foot { font-size: 7pt; color: var(--p-ink-3); margin-top: .8mm; }
-.pstat--key { border-color: var(--p-brass); border-top: 2px solid var(--p-brass); }
-.pstat--key .pstat__value { color: var(--p-navy-deep); }
+.hero__value small { font-size: 11pt; font-weight: 600; color: var(--p-brand); margin-right: 2px; }
+.hero__foot { font-size: 7.5pt; color: var(--p-ink-2); }
 
-/* ---------------------------------------------------------- 文件用表格 --- */
+.hero__split {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 3mm;
+  margin-top: 2.6mm; padding-top: 2.4mm; border-top: 1px dashed var(--p-rule-2);
+}
+.hero__cell .k { font-size: 7pt; color: var(--p-ink-2); font-weight: 700; }
+.hero__cell .v {
+  font-size: 12pt; font-weight: 700; color: var(--p-ink);
+  font-variant-numeric: tabular-nums; letter-spacing: -.01em; line-height: 1.25;
+}
+.hero__cell .v small { font-size: 7.5pt; color: var(--p-ink-3); margin-right: 1px; }
+.hero__cell .s { font-size: 6.8pt; color: var(--p-ink-3); }
+
+/* ============================================================ 區塊 ======= */
+
+.sec { margin-bottom: 4.5mm; }
+.sec__head {
+  display: flex; align-items: baseline; gap: 3mm;
+  border-bottom: 1.2px solid var(--p-brand);
+  padding-bottom: 1.4mm; margin-bottom: 2.6mm;
+}
+.sec__title {
+  font-family: var(--font-doc); font-size: 12pt; font-weight: 700;
+  color: var(--p-brand-dk); letter-spacing: .03em;
+}
+.sec__note { margin-left: auto; font-size: 7.5pt; color: var(--p-ink-3); }
+
+/* -------------------------------------------------- 配置組成橫條 -------- */
+
+.compo { display: flex; height: 8mm; border-radius: 2px; overflow: hidden; gap: 1.5px; margin-bottom: 2.4mm; }
+.compo__seg {
+  display: grid; place-items: center; min-width: 0; overflow: hidden;
+  color: #fff; font-size: 7.5pt; font-weight: 700; white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 2px rgba(0, 0, 0, .35);
+}
+
+/* ---------------------------------------------------------- 文件表格 ---- */
 
 table.ptable { width: 100%; border-collapse: collapse; font-size: 8.4pt; }
 table.ptable th {
-  background: var(--p-surface-2); color: var(--p-ink-2);
+  background: var(--p-tint); color: var(--p-brand-dk);
   font-size: 7.5pt; font-weight: 700; letter-spacing: .04em;
-  text-align: left; padding: 1.5mm 2.2mm; border-bottom: 1.2px solid var(--p-rule-2);
-  border-top: 1.2px solid var(--p-rule-2);
+  text-align: left; padding: 1.5mm 2.2mm;
+  border-bottom: 1px solid var(--p-tint-2);
 }
 table.ptable td { padding: 1.5mm 2.2mm; border-bottom: 1px solid var(--p-rule); vertical-align: middle; }
-table.ptable tbody tr:last-child td { border-bottom: 1.2px solid var(--p-rule-2); }
 table.ptable .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 table.ptable .name { font-weight: 700; }
 table.ptable tfoot td {
-  font-weight: 700; padding: 1.5mm 2.2mm; border-bottom: 0;
-  background: var(--p-navy-soft);
+  font-weight: 700; padding: 1.7mm 2.2mm; border-bottom: 0;
+  border-top: 1.2px solid var(--p-brand);
+  background: var(--p-tint);
+  color: var(--p-brand-dk);
 }
 .ptag {
   display: inline-block; padding: .3mm 1.6mm; border-radius: 2px; font-size: 7.5pt;
@@ -140,36 +163,90 @@ table.ptable tfoot td {
 }
 .pswatch { display: inline-block; width: 2.6mm; height: 2.6mm; border-radius: 1px; margin-right: 1.6mm; vertical-align: baseline; }
 
-/* --------------------------------------------------------------- 圖表 ---- */
+/* ------------------------------------------------------------- 圖表 ---- */
 
-.pchart-grid { display: grid; gap: 3mm; }
-.pchart-grid--2 { grid-template-columns: 1fr 1fr; }
-.pchart-grid--3 { grid-template-columns: repeat(3, 1fr); }
-
-.pchart { border: 1px solid var(--p-rule); border-radius: 3px; padding: 2mm 2.4mm 2.2mm; background: var(--p-surface); }
-.pchart__title { font-size: 8.5pt; font-weight: 700; color: var(--p-ink); text-align: center; }
-.pchart__sub { font-size: 6.6pt; color: var(--p-ink-3); text-align: center; margin-bottom: 1mm; }
-.pchart .legend { font-size: 6.4pt; color: var(--p-ink-2); justify-content: center; gap: 2px 7px; margin-top: 1mm; }
+.pchart { border: 1px solid var(--p-rule); border-radius: 2px; padding: 2mm 2.4mm 2.2mm; background: var(--p-surface); }
+.pchart__title { font-size: 8.5pt; font-weight: 700; color: var(--p-ink); }
+.pchart__sub { font-size: 6.8pt; color: var(--p-ink-3); margin-bottom: 1mm; }
+.pchart .legend { font-size: 6.8pt; color: var(--p-ink-2); gap: 2px 9px; margin-top: 1mm; }
 .pchart .legend__val { color: var(--p-ink-3); }
 
-/* ------------------------------------------------------------ 持倉附錄 --- */
+/* 年期數字條：把曲線上讀不精確的值補成可對照的表 */
+.milestones { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1.5px; margin-top: 2.2mm; }
+.ms {
+  background: var(--p-surface-2); border-top: 1.2px solid var(--p-brand-lt);
+  padding: 1.6mm 1.5mm; text-align: center;
+}
+.ms__y { font-size: 7pt; color: var(--p-brand-dk); font-weight: 700; letter-spacing: .06em; }
+.ms__v { font-size: 8.6pt; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.ms__g { font-size: 6.6pt; color: var(--p-ink-3); font-variant-numeric: tabular-nums; }
+
+/* -------------------------------------------------------- 分散度長條 ---- */
+
+.pspread { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; }
+.psp__label { font-size: 7.5pt; font-weight: 700; color: var(--p-ink-2); margin-bottom: 1mm; }
+.psp__bar { display: flex; height: 6.5mm; border-radius: 2px; overflow: hidden; gap: 1.5px; }
+.psp__seg {
+  display: grid; place-items: center; min-width: 0; overflow: hidden;
+  color: #fff; font-size: 7pt; font-weight: 700; white-space: nowrap;
+  font-variant-numeric: tabular-nums; text-shadow: 0 0 2px rgba(0,0,0,.35);
+}
+.psp__keys { display: flex; flex-wrap: wrap; gap: 1mm 4mm; margin-top: 1.2mm; font-size: 7pt; color: var(--p-ink-2); }
+.psp__key { display: inline-flex; align-items: center; gap: 1.4mm; }
+.psp__dot { width: 2.2mm; height: 2.2mm; border-radius: 1px; flex: none; }
+
+/* ---------------------------------------------------------- 持倉附錄 ---- */
 
 .hold-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
-.hold-card { border: 1px solid var(--p-rule); border-radius: 3px; overflow: hidden; break-inside: avoid; }
-.hold-card__head { background: var(--p-navy-deep); color: #fff; padding: 2.2mm 3mm; }
-.hold-card__head h4 { font-size: 9pt; line-height: 1.35; }
-.hold-card__head .sub { font-size: 7pt; opacity: .78; margin-top: .6mm; font-variant-numeric: tabular-nums; }
-.hold-card table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
-.hold-card th { background: var(--p-surface-2); color: var(--p-ink-3); font-size: 7.5pt; text-align: left; padding: 1.4mm 3mm; font-weight: 700; }
-.hold-card td { padding: 1.6mm 3mm; border-top: 1px solid var(--p-rule); }
-.hold-card td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--p-navy); }
+.hold-card { border: 1px solid var(--p-rule); border-radius: 2px; overflow: hidden; break-inside: avoid; }
+.hold-card__head { background: var(--p-tint); border-bottom: 1.2px solid var(--p-brand); padding: 2mm 3mm; }
+.hold-card__head h4 { font-size: 8.6pt; line-height: 1.35; color: var(--p-brand-dk); }
+.hold-card__head .sub { font-size: 6.8pt; color: var(--p-ink-2); margin-top: .5mm; font-variant-numeric: tabular-nums; }
+.hold-card table { width: 100%; border-collapse: collapse; font-size: 8.2pt; }
+.hold-card th { background: var(--p-surface-2); color: var(--p-ink-3); font-size: 7pt; text-align: left; padding: 1.2mm 3mm; font-weight: 700; }
+.hold-card td { padding: 1.5mm 3mm; border-top: 1px solid var(--p-rule); }
+.hold-card td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--p-brand-dk); }
 
-/* ------------------------------------------------------------ 風險警語 --- */
+/* ==================================================== 長期持有小叮嚀 ==== */
+
+.tips-lead {
+  background: var(--p-tint); border-left: 1.6mm solid var(--p-brand);
+  padding: 4.5mm 5mm; margin-bottom: 6mm; border-radius: 2px;
+}
+.tips-lead h3 {
+  font-family: var(--font-doc); font-size: 15.5pt; color: var(--p-brand-dk);
+  letter-spacing: .04em; margin-bottom: 1.2mm;
+}
+.tips-lead p { font-size: 9.2pt; color: var(--p-ink-2); line-height: 1.8; }
+
+.tips-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6.5mm 7mm; }
+.tip { display: grid; grid-template-columns: 9.5mm 1fr; gap: 1mm; break-inside: avoid; }
+.tip__n {
+  font-family: var(--font-num); font-size: 18pt; font-weight: 700;
+  color: var(--p-brand-lt); line-height: 1; letter-spacing: -.03em;
+}
+.tip__title { font-size: 10.5pt; font-weight: 700; color: var(--p-ink); margin-bottom: 1.4mm; line-height: 1.35; }
+.tip__body { font-size: 8.8pt; color: var(--p-ink-2); line-height: 1.8; }
+.tip__body b { color: var(--p-brand-dk); }
+
+.tips-close {
+  margin-top: auto; padding-top: 4mm; border-top: 1.2px solid var(--p-brand);
+  display: grid; grid-template-columns: 1fr 62mm; gap: 6mm; align-items: end;
+}
+.tips-close__note { font-size: 8.8pt; color: var(--p-ink-2); line-height: 1.8; }
+.tips-close__note b { color: var(--p-brand-dk); }
+.sign { font-size: 8.4pt; color: var(--p-ink-2); }
+.sign__row { display: flex; align-items: flex-end; gap: 2mm; margin-bottom: 3mm; }
+.sign__k { white-space: nowrap; font-weight: 700; }
+.sign__line { flex: 1; border-bottom: 1px solid var(--p-rule-2); height: 5mm; }
+.sign__val { flex: 1; border-bottom: 1px solid var(--p-rule-2); height: 5mm; font-weight: 700; color: var(--p-ink); }
+
+/* ---------------------------------------------------------- 風險警語 ---- */
 
 .disclaimer { margin-top: auto; padding-top: 2.6mm; border-top: 1px solid var(--p-rule); }
-.disclaimer h5 { font-size: 8pt; color: var(--p-ink); letter-spacing: .04em; margin-bottom: 1.2mm; }
+.disclaimer h5 { font-size: 7.5pt; color: var(--p-brand-dk); letter-spacing: .04em; margin-bottom: 1mm; }
 .disclaimer ol { margin: 0; padding-left: 4mm; font-size: 6.4pt; color: var(--p-ink-2); line-height: 1.45; }
-.disclaimer li { margin-bottom: .6mm; }
+.disclaimer li { margin-bottom: .5mm; }
 .disclaimer b { color: var(--p-ink); }
 
 .sheet__foot {
@@ -178,31 +255,35 @@ table.ptable tfoot td {
 }
 .sheet__foot .pageno { margin-left: auto; font-variant-numeric: tabular-nums; }
 
-/* ---------------------------------------------------------- 比較表版面 --- */
+/* ---------------------------------------------------------- 比較表 ------ */
 
-.cmp-head { border-bottom: 1.5px solid var(--p-ink); padding-bottom: 5px; margin-bottom: 4mm;
-  display: flex; align-items: flex-end; gap: 12px; }
-.cmp-head__title { font-family: var(--font-doc); font-size: 16pt; color: var(--p-navy-deep); font-weight: 700; }
-.cmp-head__sub { font-size: 8.5pt; color: var(--p-ink-2); margin-top: 1mm; }
-.cmp-head__no { margin-left: auto; font-family: var(--font-num); font-size: 14pt; color: var(--p-brass); font-weight: 700; }
+.cmp-head {
+  border-bottom: 1.2px solid var(--p-brand); padding-bottom: 1.6mm; margin-bottom: 3.4mm;
+  display: flex; align-items: flex-end; gap: 4mm;
+}
+.cmp-head__title { font-family: var(--font-doc); font-size: 15pt; color: var(--p-brand-dk); font-weight: 700; }
+.cmp-head__sub { font-size: 8pt; color: var(--p-ink-2); margin-top: .8mm; }
+.cmp-head__no { margin-left: auto; font-family: var(--font-num); font-size: 15pt; color: var(--p-brand-lt); font-weight: 700; }
 
 table.cmp { width: 100%; border-collapse: collapse; font-size: 8.5pt; table-layout: fixed; }
 table.cmp th {
-  background: var(--p-navy-deep); color: #fff; font-size: 7.5pt; font-weight: 700;
-  text-align: left; padding: 2mm 2.2mm; letter-spacing: .03em;
+  background: var(--p-brand-dk); color: #fff; font-size: 7.5pt; font-weight: 700;
+  text-align: left; padding: 1.8mm 2.2mm; letter-spacing: .03em;
 }
 table.cmp td { padding: 4mm 2.2mm; border-bottom: 1px solid var(--p-rule); vertical-align: top; }
 table.cmp tbody tr:nth-child(even) { background: var(--p-surface-2); }
-table.cmp .c-name { font-weight: 700; font-size: 8.8pt; color: var(--p-navy-deep); }
+table.cmp .c-name { font-weight: 700; font-size: 8.8pt; color: var(--p-brand-dk); }
 table.cmp .c-sub { font-size: 7pt; color: var(--p-ink-3); margin-top: .6mm; }
 table.cmp .c-nav { font-variant-numeric: tabular-nums; font-weight: 700; }
 table.cmp .c-hold { font-size: 7.6pt; color: var(--p-ink-2); line-height: 1.5; }
 table.cmp .c-hold b { font-weight: 700; color: var(--p-ink); font-variant-numeric: tabular-nums; }
 
-.cmp-note { margin-top: 3mm; font-size: 7.5pt; color: var(--p-ink-2); background: var(--p-navy-soft);
-  border-left: 2px solid var(--p-navy); padding: 2mm 3mm; }
+.cmp-note {
+  margin-top: 3mm; font-size: 7.5pt; color: var(--p-ink-2);
+  background: var(--p-tint); border-left: 1.2mm solid var(--p-brand); padding: 2mm 3mm;
+}
 
-/* --------------------------------------------------------------- 列印 ---- */
+/* ------------------------------------------------------------- 列印 ----- */
 
 /* 移到畫面外而不是 display:none —— 隱藏的元素量不到高度，
    自動縮放就無法在列印前算出正確比例。 */
@@ -230,5 +311,5 @@ table.cmp .c-hold b { font-weight: 700; color: var(--p-ink); font-variant-numeri
   #printRoot .sheet:last-child { break-after: auto; page-break-after: auto; }
 
   .sheet, .sheet * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .hold-card, .pchart, .pstat, tr { break-inside: avoid; page-break-inside: avoid; }
+  .hold-card, .pchart, .tip, tr { break-inside: avoid; page-break-inside: avoid; }
 }

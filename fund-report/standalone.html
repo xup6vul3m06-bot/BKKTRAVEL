@@ -9,41 +9,51 @@
 /* ==== assets/app.css ==== */
 /* =============================================================================
    基金配置建議書產生器 — 介面樣式
-   色彩全部走 token；深色值同時定義在 media query 與 [data-theme] 兩處，
+   -----------------------------------------------------------------------------
+   主色為暖橘。中性色刻意帶褐調而非藍灰，讓整體是一套暖色系統，
+   而不是冷灰配一個橘色重點。
+   深色值同時定義在 media query 與 [data-theme] 兩處，
    讓「跟隨系統」與「手動切換」兩種狀態都能正確解析。
    ========================================================================== */
 
 :root {
   color-scheme: light;
 
-  /* 紙面與墨色（中性色帶一點青綠，避免純灰的無機感） */
-  --paper:        #F1F2EF;
+  /* 暖橘主色階 */
+  --brand-900: #5E2409;
+  --brand-800: #7C3210;
+  --brand-700: #9B4416;
+  --brand-600: #BC581C;
+  --brand-500: #D97120;   /* 主色錨點 */
+  --brand-400: #E89150;
+  --brand-200: #F6CBA6;
+  --brand-100: #FBE4D0;
+  --brand-050: #FDF3E9;
+
+  /* 對比用的深青，只在需要與橘色分離時出現，用量極少 */
+  --teal-700: #185E5A;
+  --teal-500: #23837D;
+
+  /* 暖中性色 */
+  --paper:        #FAF6F1;
   --surface:      #FFFFFF;
-  --surface-2:    #F8F9F6;
-  --surface-3:    #EEF0EC;
-  --ink:          #14191E;
-  --ink-2:        #4C555D;
-  --ink-3:        #7C858C;
-  --rule:         #DEE0DC;
-  --rule-strong:  #C4C8C3;
+  --surface-2:    #FBF7F2;
+  --surface-3:    #F2EBE2;
+  --ink:          #241A13;
+  --ink-2:        #5E5047;
+  --ink-3:        #8E8077;
+  --rule:         #E8DED2;
+  --rule-strong:  #D2C3B3;
 
-  /* 主色：藏青。次要重音：黃銅（只用於節次編號與關鍵數字底線） */
-  --navy:         #1C4470;
-  --navy-deep:    #0E2338;
-  --navy-soft:    #E7EDF4;
-  --navy-line:    #B9CBDE;
-  --brass:        #A87D2B;
-  --brass-soft:   #F4EEDF;
-
-  /* 台股慣例：紅漲綠跌。僅用於報酬率與漲跌，不當作系列色 */
-  --up:           #C02B2B;
+  /* 台股慣例：紅漲綠跌。僅用於報酬率，不當作系列色 */
+  --up:           #C0392B;
   --down:         #12764C;
 
-  /* 圖表系列色（已通過色盲分離度與亮度帶檢驗，固定順序不可循環） */
-  --series-1: #2a78d6;  --series-2: #eb6834;  --series-3: #1baf7a;  --series-4: #eda100;
+  /* 圖表系列色（已通過色盲分離度與亮度帶檢驗，橘色領銜，順序固定不可循環） */
+  --series-1: #eb6834;  --series-2: #2a78d6;  --series-3: #1baf7a;  --series-4: #eda100;
   --series-5: #e87ba4;  --series-6: #008300;  --series-7: #4a3aa7;  --series-8: #e34948;
-  --grid:     #E4E6E2;
-  --axis:     #C4C8C3;
+  --grid:     #EFE7DC;
+  --axis:     #D2C3B3;
 
   /* 圖表引擎讀取的角色色（.sheet 內會被紙張色票覆寫） */
   --c-surface: var(--surface);
@@ -59,38 +69,42 @@
               PMingLiU, Georgia, serif;
   --font-num: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
 
-  --r-sm: 3px;  --r-md: 5px;  --r-lg: 8px;
-  --shadow: 0 1px 2px rgba(14, 35, 56, .05), 0 4px 14px rgba(14, 35, 56, .05);
+  --r-sm: 3px;  --r-md: 6px;  --r-lg: 10px;
+  --shadow: 0 1px 2px rgba(94, 36, 9, .05), 0 4px 16px rgba(94, 36, 9, .06);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --paper: #0F1417;  --surface: #161C21;  --surface-2: #1B2228;  --surface-3: #212a31;
-    --ink: #E9ECEA;    --ink-2: #A9B2B8;    --ink-3: #7E888F;
-    --rule: #2A333A;   --rule-strong: #3A444B;
-    --navy: #7FA8D6;   --navy-deep: #CBDCEE; --navy-soft: #1C2A38; --navy-line: #33475C;
-    --brass: #D6AC5C;  --brass-soft: #2A2418;
+    --brand-900: #FBE4D0; --brand-800: #F6CBA6; --brand-700: #E89150;
+    --brand-600: #E17F35; --brand-500: #D97120; --brand-400: #B7551A;
+    --brand-200: #5E2409; --brand-100: #40200D; --brand-050: #2A1710;
+    --teal-700: #6FC4BD; --teal-500: #3FA49D;
+    --paper: #14100D;  --surface: #1E1813;  --surface-2: #241D17;  --surface-3: #2E251D;
+    --ink: #F0E9E1;    --ink-2: #B8A99C;    --ink-3: #8E8077;
+    --rule: #362C23;   --rule-strong: #4A3B2E;
     --up: #E2635F;     --down: #3FA97A;
-    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+    --series-1: #d95926; --series-2: #3987e5; --series-3: #199e70; --series-4: #c98500;
     --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
-    --grid: #242D34;   --axis: #3A444B;
-    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 14px rgba(0,0,0,.25);
+    --grid: #2A211A;   --axis: #4A3B2E;
+    --shadow: 0 1px 2px rgba(0,0,0,.35), 0 4px 16px rgba(0,0,0,.28);
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --paper: #0F1417;  --surface: #161C21;  --surface-2: #1B2228;  --surface-3: #212a31;
-  --ink: #E9ECEA;    --ink-2: #A9B2B8;    --ink-3: #7E888F;
-  --rule: #2A333A;   --rule-strong: #3A444B;
-  --navy: #7FA8D6;   --navy-deep: #CBDCEE; --navy-soft: #1C2A38; --navy-line: #33475C;
-  --brass: #D6AC5C;  --brass-soft: #2A2418;
+  --brand-900: #FBE4D0; --brand-800: #F6CBA6; --brand-700: #E89150;
+  --brand-600: #E17F35; --brand-500: #D97120; --brand-400: #B7551A;
+  --brand-200: #5E2409; --brand-100: #40200D; --brand-050: #2A1710;
+  --teal-700: #6FC4BD; --teal-500: #3FA49D;
+  --paper: #14100D;  --surface: #1E1813;  --surface-2: #241D17;  --surface-3: #2E251D;
+  --ink: #F0E9E1;    --ink-2: #B8A99C;    --ink-3: #8E8077;
+  --rule: #362C23;   --rule-strong: #4A3B2E;
   --up: #E2635F;     --down: #3FA97A;
-  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+  --series-1: #d95926; --series-2: #3987e5; --series-3: #199e70; --series-4: #c98500;
   --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
-  --grid: #242D34;   --axis: #3A444B;
-  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 14px rgba(0,0,0,.25);
+  --grid: #2A211A;   --axis: #4A3B2E;
+  --shadow: 0 1px 2px rgba(0,0,0,.35), 0 4px 16px rgba(0,0,0,.28);
 }
 
 * { box-sizing: border-box; }
@@ -108,10 +122,10 @@ body {
 h1, h2, h3, h4 { margin: 0; text-wrap: balance; font-weight: 700; line-height: 1.3; }
 p { margin: 0; }
 button, input, select, textarea { font: inherit; color: inherit; }
-a { color: var(--navy); }
+a { color: var(--brand-700); }
 
 :where(a, button, input, select, textarea, [tabindex]):focus-visible {
-  outline: 2px solid var(--navy);
+  outline: 2px solid var(--brand-500);
   outline-offset: 2px;
   border-radius: var(--r-sm);
 }
@@ -127,16 +141,20 @@ a { color: var(--navy); }
   background: var(--surface);
   border-bottom: 1px solid var(--rule);
 }
+.topbar::before {
+  content: ""; display: block; height: 3px;
+  background: linear-gradient(90deg, var(--brand-500), var(--brand-400) 60%, var(--brand-200));
+}
 
 .topbar__inner {
-  max-width: 1280px; margin: 0 auto; padding: 12px 24px;
+  max-width: 1280px; margin: 0 auto; padding: 11px 24px;
   display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
 }
 
 .brand { display: flex; align-items: baseline; gap: 10px; margin-right: auto; }
 .brand__mark {
   font-family: var(--font-doc); font-size: 19px; font-weight: 700;
-  color: var(--navy-deep); letter-spacing: .04em;
+  color: var(--brand-800); letter-spacing: .04em;
 }
 .brand__sub { font-size: 12px; color: var(--ink-3); letter-spacing: .08em; }
 
@@ -148,14 +166,14 @@ a { color: var(--navy); }
   transition: background .15s, color .15s;
 }
 .tab:hover { color: var(--ink); }
-.tab[aria-selected="true"] { background: var(--surface); color: var(--navy-deep); box-shadow: 0 1px 2px rgba(14,35,56,.12); }
+.tab[aria-selected="true"] { background: var(--surface); color: var(--brand-800); box-shadow: 0 1px 3px rgba(94,36,9,.14); }
 
 .icon-btn {
-  appearance: none; background: var(--surface); border: 1px solid var(--rule);
+  appearance: none; background: var(--surface); border: 1px solid var(--rule-strong);
   color: var(--ink-2); width: 34px; height: 34px; border-radius: var(--r-md);
   cursor: pointer; display: grid; place-items: center; font-size: 15px;
 }
-.icon-btn:hover { border-color: var(--rule-strong); color: var(--ink); }
+.icon-btn:hover { border-color: var(--brand-400); color: var(--brand-700); }
 
 /* -------------------------------------------------------------- 版面 ----- */
 
@@ -163,7 +181,7 @@ a { color: var(--navy); }
 .panel[hidden] { display: none; }
 
 .page-head { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
-.page-head h2 { font-family: var(--font-doc); font-size: 22px; color: var(--navy-deep); }
+.page-head h2 { font-family: var(--font-doc); font-size: 22px; color: var(--brand-800); }
 .page-head p { color: var(--ink-2); font-size: 13.5px; }
 .page-head__actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
 
@@ -175,7 +193,7 @@ a { color: var(--navy); }
   padding: 14px 18px; border-bottom: 1px solid var(--rule);
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
 }
-.card__head h3 { font-size: 15px; color: var(--navy-deep); }
+.card__head h3 { font-size: 15px; color: var(--brand-800); }
 .card__head .hint { font-size: 12.5px; color: var(--ink-3); }
 .card__body { padding: 18px; }
 
@@ -188,13 +206,12 @@ a { color: var(--navy); }
   display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
   transition: background .15s, border-color .15s;
 }
-.btn:hover { background: var(--surface-2); border-color: var(--ink-3); }
-.btn--primary { background: var(--navy); border-color: var(--navy); color: #fff; }
-.btn--primary:hover { background: var(--navy-deep); border-color: var(--navy-deep); }
-:root[data-theme="dark"] .btn--primary,
-:root:not([data-theme="light"]) .btn--primary { color: #0F1417; }
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) .btn--primary { color: #fff; }
+.btn:hover { background: var(--surface-2); border-color: var(--brand-400); }
+.btn--primary { background: var(--brand-600); border-color: var(--brand-600); color: #fff; }
+.btn--primary:hover { background: var(--brand-700); border-color: var(--brand-700); }
+:root[data-theme="dark"] .btn--primary { background: var(--brand-500); border-color: var(--brand-500); color: #1A1109; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .btn--primary { background: var(--brand-500); border-color: var(--brand-500); color: #1A1109; }
 }
 .btn--ghost { background: transparent; border-color: transparent; color: var(--ink-2); padding: 6px 10px; }
 .btn--ghost:hover { background: var(--surface-3); color: var(--ink); }
@@ -208,7 +225,7 @@ a { color: var(--navy); }
   border-radius: var(--r-md); padding: 8px 10px; width: 100%;
   font-size: 14px; color: var(--ink);
 }
-.input:focus, .select:focus { border-color: var(--navy); outline: none; box-shadow: 0 0 0 3px var(--navy-soft); }
+.input:focus, .select:focus { border-color: var(--brand-500); outline: none; box-shadow: 0 0 0 3px var(--brand-100); }
 .input--num { font-family: var(--font-num); text-align: right; font-variant-numeric: tabular-nums; }
 
 .chips { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -217,11 +234,11 @@ a { color: var(--navy); }
   border: 1px solid var(--rule-strong); background: var(--surface); color: var(--ink-2);
   padding: 5px 12px; border-radius: 999px; transition: .15s;
 }
-.chip:hover { border-color: var(--ink-3); color: var(--ink); }
-.chip[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: #fff; }
-:root[data-theme="dark"] .chip[aria-pressed="true"] { color: #0F1417; }
+.chip:hover { border-color: var(--brand-400); color: var(--brand-700); }
+.chip[aria-pressed="true"] { background: var(--brand-600); border-color: var(--brand-600); color: #fff; }
+:root[data-theme="dark"] .chip[aria-pressed="true"] { background: var(--brand-500); border-color: var(--brand-500); color: #1A1109; }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .chip[aria-pressed="true"] { color: #0F1417; }
+  :root:not([data-theme="light"]) .chip[aria-pressed="true"] { background: var(--brand-500); border-color: var(--brand-500); color: #1A1109; }
 }
 
 .toolbar { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
@@ -242,9 +259,9 @@ table.data thead th {
   border-bottom: 1px solid var(--rule-strong);
 }
 table.data thead th.sortable { cursor: pointer; user-select: none; }
-table.data thead th.sortable:hover { color: var(--ink); }
+table.data thead th.sortable:hover { color: var(--brand-700); }
 table.data tbody tr:hover { background: var(--surface-2); }
-table.data tbody tr.is-picked { background: var(--navy-soft); }
+table.data tbody tr.is-picked { background: var(--brand-050); }
 table.data td.num, table.data th.num {
   text-align: right; font-family: var(--font-num);
   font-variant-numeric: tabular-nums; white-space: nowrap;
@@ -273,6 +290,14 @@ table.data td.num, table.data th.num {
   :root:not([data-theme="light"]) .pill--rr5 { color:#e2635f; border-color:#4d2523; background:#251312; }
 }
 
+/* 自動更新來源標記 */
+.src-tag {
+  display: inline-block; margin-top: 3px; padding: 0 5px;
+  font-size: 10.5px; font-weight: 700; border-radius: 2px;
+  background: var(--brand-100); color: var(--brand-800); border: 1px solid var(--brand-200);
+  letter-spacing: .02em;
+}
+
 .holdings-inline { font-size: 12.5px; color: var(--ink-2); line-height: 1.7; }
 .holdings-inline b { font-family: var(--font-num); font-weight: 600; color: var(--ink); }
 .holdings-inline .as-of { color: var(--ink-3); }
@@ -281,7 +306,7 @@ table.data td.num, table.data th.num {
 .val-down { color: var(--down); }
 .muted { color: var(--ink-3); }
 .nowrap { white-space: nowrap; }
-.assumed { border-bottom: 1px dotted var(--brass); cursor: help; }
+.assumed { border-bottom: 1px dotted var(--brand-500); cursor: help; }
 
 /* ------------------------------------------------------------ 配置試算 --- */
 
@@ -312,10 +337,9 @@ table.data td.num, table.data th.num {
   border-top: 2px solid var(--rule-strong); margin-top: 6px; font-weight: 700;
 }
 .total-bar .num { font-family: var(--font-num); font-variant-numeric: tabular-nums; margin-left: auto; }
-.total-bar.is-off { color: var(--up); }
+.total-bar.is-off { color: var(--brand-700); }
 
 /* KPI */
-/* 欄寬必須容得下 NT$ 24,242,954 這種長度，否則數字會被裁掉 */
 .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
 .kpi {
   background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r-md);
@@ -323,12 +347,12 @@ table.data td.num, table.data th.num {
 }
 .kpi__label { font-size: 12px; color: var(--ink-2); font-weight: 600; letter-spacing: .03em; }
 .kpi__value {
-  font-size: clamp(17px, 1.7vw, 21px); font-weight: 700; color: var(--navy-deep); margin-top: 4px;
+  font-size: clamp(17px, 1.7vw, 21px); font-weight: 700; color: var(--brand-800); margin-top: 4px;
   letter-spacing: -.02em; white-space: nowrap;
 }
 .kpi__value small { font-size: 12px; font-weight: 600; color: var(--ink-3); margin-right: 3px; }
 .kpi__foot { font-size: 11.5px; color: var(--ink-3); margin-top: 3px; }
-.kpi--accent { border-left: 3px solid var(--brass); }
+.kpi--accent { border-left: 3px solid var(--brand-500); background: var(--brand-050); }
 
 /* 圖表 */
 .chart-stack { display: flex; flex-direction: column; gap: 16px; }
@@ -351,21 +375,44 @@ table.data td.num, table.data th.num {
   max-width: 260px; transition: opacity .1s;
 }
 .chart-tip b { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
-.chart-tip .tip-title { font-weight: 700; margin-bottom: 3px; color: var(--navy-deep); }
+.chart-tip .tip-title { font-weight: 700; margin-bottom: 3px; color: var(--brand-800); }
+
+/* 分散度水平長條（取代甜甜圈，同樣資訊、更省空間也更好讀） */
+.spread-row { margin-bottom: 14px; }
+.spread-row:last-child { margin-bottom: 0; }
+.spread-row__label { font-size: 12px; font-weight: 700; color: var(--ink-2); margin-bottom: 5px; }
+.spread-bar {
+  display: flex; height: 22px; border-radius: 3px; overflow: hidden;
+  background: var(--surface-3); gap: 2px;
+}
+.spread-seg {
+  display: grid; place-items: center; min-width: 0;
+  font-size: 11px; font-weight: 700; color: #fff;
+  font-variant-numeric: tabular-nums; overflow: hidden; white-space: nowrap;
+  text-shadow: 0 0 3px rgba(0, 0, 0, .3);
+}
 
 /* ------------------------------------------------------------- 提示條 ---- */
 
 .notice {
   display: flex; gap: 10px; align-items: flex-start;
-  background: var(--brass-soft); border: 1px solid var(--brass);
+  background: var(--brand-050); border: 1px solid var(--brand-200);
   border-radius: var(--r-md); padding: 11px 14px; font-size: 13px; color: var(--ink);
   line-height: 1.6;
 }
-.notice__mark { color: var(--brass); font-weight: 700; flex: none; }
-.notice--info { background: var(--navy-soft); border-color: var(--navy-line); }
-.notice--info .notice__mark { color: var(--navy); }
+.notice__mark { color: var(--brand-600); font-weight: 700; flex: none; }
+.notice--info { background: var(--surface-2); border-color: var(--rule-strong); }
+.notice--info .notice__mark { color: var(--teal-500); }
 
 .status-line { font-size: 12.5px; color: var(--ink-2); min-height: 20px; }
+
+/* 淨值更新狀態列 */
+.nav-status {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-size: 12.5px; color: var(--ink-2);
+}
+.nav-status .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--brand-500); flex: none; }
+.nav-status .dot--idle { background: var(--ink-3); }
 
 /* ------------------------------------------------------------ 資料維護 --- */
 
@@ -384,50 +431,58 @@ table.data td.num, table.data th.num {
 <style>
 /* ==== assets/print.css ==== */
 /* =============================================================================
-   A4 文件樣式 — 建議書與比較表
+   A4 文件樣式 — 建議書、比較表、長期持有叮嚀
    .sheet 模擬紙張，因此固定使用淺色調（不隨深色模式反轉），
    螢幕預覽與列印輸出共用同一份規則，所見即所得。
    ========================================================================== */
 
 .sheet {
   /* 紙張自帶一組固定色票，與介面 token 脫鉤 */
-  --p-ink:      #14181C;
-  --p-ink-2:    #4A5058;
-  --p-ink-3:    #7A828A;
-  --p-rule:     #D9DCD8;
-  --p-rule-2:   #B9BDB8;
-  --p-navy:     #1C4470;
-  --p-navy-deep:#0E2338;
-  --p-navy-soft:#EDF2F8;
-  --p-brass:    #A87D2B;
+  --p-ink:      #241A13;
+  --p-ink-2:    #5A4C43;
+  --p-ink-3:    #8B7D73;
+  --p-rule:     #E5DACD;
+  --p-rule-2:   #CDBCA9;
+  --p-brand:    #C25A1A;
+  --p-brand-dk: #8A3A0F;
+  --p-brand-lt: #E89150;
+  --p-tint:     #FDF3E9;
+  --p-tint-2:   #F8E7D5;
+  --p-teal:     #1B6A65;
   --p-surface:  #FFFFFF;
-  --p-surface-2:#F7F8F5;
-  --p-up:       #C02B2B;
+  --p-surface-2:#FBF7F2;
+  --p-up:       #C0392B;
   --p-down:     #12764C;
 
   /* 紙張永遠是白的：圖表角色色與系列色在此固定為淺色版本，
      不隨介面深色模式反轉，否則列印會拿到深色系列色。 */
   --c-surface: #FFFFFF;
-  --c-grid:    #E7E9E5;
-  --c-axis:    #B9BDB8;
-  --c-ink:     #14181C;
-  --c-ink-2:   #4A5058;
-  --c-ink-3:   #7A828A;
-  --series-1: #2a78d6;  --series-2: #eb6834;  --series-3: #1baf7a;  --series-4: #eda100;
+  --c-grid:    #EFE7DC;
+  --c-axis:    #CDBCA9;
+  --c-ink:     #241A13;
+  --c-ink-2:   #5A4C43;
+  --c-ink-3:   #8B7D73;
+  --series-1: #eb6834;  --series-2: #2a78d6;  --series-3: #1baf7a;  --series-4: #eda100;
   --series-5: #e87ba4;  --series-6: #008300;  --series-7: #4a3aa7;  --series-8: #e34948;
 
   width: 210mm;
   min-height: 297mm;
-  padding: 13mm 15mm 11mm;
+  padding: 12mm 14mm 10mm;
   background: var(--p-surface);
   color: var(--p-ink);
   font-family: var(--font-ui);
   font-size: 9.5pt;
   line-height: 1.55;
-  box-shadow: 0 2px 10px rgba(14, 35, 56, .16);
+  box-shadow: 0 2px 12px rgba(94, 36, 9, .15);
   display: flex;
   flex-direction: column;
   position: relative;
+}
+
+.sheet::before {
+  content: "";
+  position: absolute; inset: 0 0 auto 0; height: 4.5mm;
+  background: linear-gradient(90deg, var(--p-brand-dk), var(--p-brand) 45%, var(--p-brand-lt));
 }
 
 .sheet__body {
@@ -437,86 +492,101 @@ table.data td.num, table.data th.num {
   min-height: 0;
 }
 
-.sheet::before {
-  content: "";
-  position: absolute; inset: 0 0 auto 0; height: 4mm;
-  background: var(--p-navy);
+/* ============================================================ 報頭 ======= */
+
+.mast {
+  display: grid;
+  grid-template-columns: 1fr 78mm;
+  gap: 5mm;
+  align-items: stretch;
+  margin-bottom: 5mm;
 }
 
-/* ------------------------------------------------------------- 文件頁首 -- */
-
-.doc-header { border-bottom: 1.5px solid var(--p-ink); padding-bottom: 6px; margin-bottom: 3.2mm; }
-.doc-header__name {
-  font-family: var(--font-doc); font-size: 21pt; font-weight: 700;
-  color: var(--p-navy-deep); letter-spacing: .04em; line-height: 1.15;
+.mast__id { display: flex; flex-direction: column; justify-content: center; }
+.mast__eyebrow {
+  font-size: 7.5pt; color: var(--p-brand); font-weight: 700;
+  letter-spacing: .22em; text-transform: uppercase; margin-bottom: 1.5mm;
 }
-.doc-header__row { display: flex; align-items: flex-end; gap: 16px; margin-top: 6px; }
-.doc-header__meta { font-size: 9pt; color: var(--p-ink-2); }
-.doc-header__meta b { color: var(--p-ink); font-weight: 700; }
-.doc-header__meta .sep { color: var(--p-rule-2); margin: 0 8px; }
-.doc-header__dates {
-  margin-left: auto; text-align: right; font-size: 8pt; color: var(--p-ink-3);
-  font-variant-numeric: tabular-nums; white-space: nowrap; line-height: 1.5;
+.mast__name {
+  font-family: var(--font-doc); font-size: 25pt; font-weight: 700;
+  color: var(--p-ink); letter-spacing: .04em; line-height: 1.1;
 }
+.mast__rule { height: 1.2mm; width: 22mm; background: var(--p-brand); margin: 2.4mm 0; }
+.mast__meta { font-size: 8.5pt; color: var(--p-ink-2); line-height: 1.7; }
+.mast__meta b { color: var(--p-ink); }
+.mast__meta .sep { color: var(--p-rule-2); margin: 0 6px; }
 
-/* ------------------------------------------------------------- 節次標題 -- */
-
-.doc-h {
-  display: flex; align-items: baseline; gap: 8px;
-  font-family: var(--font-doc); font-size: 12.5pt; color: var(--p-navy-deep);
-  margin: 0 0 2.5mm;
-}
-.doc-h__n {
-  font-family: var(--font-num); font-size: 10pt; font-weight: 700;
-  color: var(--p-brass); letter-spacing: .02em;
-}
-.doc-h__note { margin-left: auto; font-family: var(--font-ui); font-size: 8pt; color: var(--p-ink-3); font-weight: 400; }
-
-.doc-block { margin-bottom: 3.6mm; }
-.doc-block--tight { margin-bottom: 3.5mm; }
-
-/* ------------------------------------------------------- 總覽與成效卡 ---- */
-
-.ov-grid { display: grid; grid-template-columns: 1.15fr 2.4fr; gap: 4mm; align-items: stretch; }
-.ov-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; }
-
-.pcard {
-  border: 1px solid var(--p-rule); border-radius: 3px;
-  padding: 2.6mm 3.2mm; background: var(--p-surface-2);
+/* 主角數字：客戶第一眼要看到的是「每個月領多少」 */
+.hero {
+  background: var(--p-tint);
+  border: 1px solid var(--p-tint-2);
+  border-left: 1.6mm solid var(--p-brand);
+  border-radius: 2px;
+  padding: 3.4mm 4mm;
   display: flex; flex-direction: column; justify-content: center;
 }
-.pcard__label { font-size: 7.5pt; color: var(--p-ink-3); font-weight: 700; letter-spacing: .06em; }
-.pcard__plan { font-family: var(--font-doc); font-size: 14pt; color: var(--p-navy-deep); font-weight: 700; margin: 1mm 0 2mm; }
-.pcard__amt { font-size: 13pt; font-weight: 700; color: var(--p-ink); font-variant-numeric: tabular-nums; }
-.pcard__amt small { font-size: 8pt; color: var(--p-ink-3); margin-right: 2px; }
-
-.pstat { text-align: center; border: 1px solid var(--p-rule); border-radius: 3px; padding: 2.4mm 2mm; background: var(--p-surface); }
-.pstat__label { font-size: 8pt; color: var(--p-ink-2); font-weight: 700; }
-.pstat__value {
-  font-size: 13.5pt; font-weight: 700; color: var(--p-navy); margin-top: 1.2mm;
-  font-variant-numeric: tabular-nums; letter-spacing: -.01em;
+.hero__label { font-size: 8pt; color: var(--p-brand-dk); font-weight: 700; letter-spacing: .1em; }
+.hero__value {
+  font-size: 25pt; font-weight: 700; color: var(--p-brand-dk);
+  line-height: 1.1; letter-spacing: -.02em; font-variant-numeric: tabular-nums;
+  margin: .6mm 0;
 }
-.pstat__value small { font-size: 8.5pt; color: var(--p-ink-3); margin-right: 2px; font-weight: 600; }
-.pstat__foot { font-size: 7pt; color: var(--p-ink-3); margin-top: .8mm; }
-.pstat--key { border-color: var(--p-brass); border-top: 2px solid var(--p-brass); }
-.pstat--key .pstat__value { color: var(--p-navy-deep); }
+.hero__value small { font-size: 11pt; font-weight: 600; color: var(--p-brand); margin-right: 2px; }
+.hero__foot { font-size: 7.5pt; color: var(--p-ink-2); }
 
-/* ---------------------------------------------------------- 文件用表格 --- */
+.hero__split {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 3mm;
+  margin-top: 2.6mm; padding-top: 2.4mm; border-top: 1px dashed var(--p-rule-2);
+}
+.hero__cell .k { font-size: 7pt; color: var(--p-ink-2); font-weight: 700; }
+.hero__cell .v {
+  font-size: 12pt; font-weight: 700; color: var(--p-ink);
+  font-variant-numeric: tabular-nums; letter-spacing: -.01em; line-height: 1.25;
+}
+.hero__cell .v small { font-size: 7.5pt; color: var(--p-ink-3); margin-right: 1px; }
+.hero__cell .s { font-size: 6.8pt; color: var(--p-ink-3); }
+
+/* ============================================================ 區塊 ======= */
+
+.sec { margin-bottom: 4.5mm; }
+.sec__head {
+  display: flex; align-items: baseline; gap: 3mm;
+  border-bottom: 1.2px solid var(--p-brand);
+  padding-bottom: 1.4mm; margin-bottom: 2.6mm;
+}
+.sec__title {
+  font-family: var(--font-doc); font-size: 12pt; font-weight: 700;
+  color: var(--p-brand-dk); letter-spacing: .03em;
+}
+.sec__note { margin-left: auto; font-size: 7.5pt; color: var(--p-ink-3); }
+
+/* -------------------------------------------------- 配置組成橫條 -------- */
+
+.compo { display: flex; height: 8mm; border-radius: 2px; overflow: hidden; gap: 1.5px; margin-bottom: 2.4mm; }
+.compo__seg {
+  display: grid; place-items: center; min-width: 0; overflow: hidden;
+  color: #fff; font-size: 7.5pt; font-weight: 700; white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 2px rgba(0, 0, 0, .35);
+}
+
+/* ---------------------------------------------------------- 文件表格 ---- */
 
 table.ptable { width: 100%; border-collapse: collapse; font-size: 8.4pt; }
 table.ptable th {
-  background: var(--p-surface-2); color: var(--p-ink-2);
+  background: var(--p-tint); color: var(--p-brand-dk);
   font-size: 7.5pt; font-weight: 700; letter-spacing: .04em;
-  text-align: left; padding: 1.5mm 2.2mm; border-bottom: 1.2px solid var(--p-rule-2);
-  border-top: 1.2px solid var(--p-rule-2);
+  text-align: left; padding: 1.5mm 2.2mm;
+  border-bottom: 1px solid var(--p-tint-2);
 }
 table.ptable td { padding: 1.5mm 2.2mm; border-bottom: 1px solid var(--p-rule); vertical-align: middle; }
-table.ptable tbody tr:last-child td { border-bottom: 1.2px solid var(--p-rule-2); }
 table.ptable .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 table.ptable .name { font-weight: 700; }
 table.ptable tfoot td {
-  font-weight: 700; padding: 1.5mm 2.2mm; border-bottom: 0;
-  background: var(--p-navy-soft);
+  font-weight: 700; padding: 1.7mm 2.2mm; border-bottom: 0;
+  border-top: 1.2px solid var(--p-brand);
+  background: var(--p-tint);
+  color: var(--p-brand-dk);
 }
 .ptag {
   display: inline-block; padding: .3mm 1.6mm; border-radius: 2px; font-size: 7.5pt;
@@ -525,36 +595,90 @@ table.ptable tfoot td {
 }
 .pswatch { display: inline-block; width: 2.6mm; height: 2.6mm; border-radius: 1px; margin-right: 1.6mm; vertical-align: baseline; }
 
-/* --------------------------------------------------------------- 圖表 ---- */
+/* ------------------------------------------------------------- 圖表 ---- */
 
-.pchart-grid { display: grid; gap: 3mm; }
-.pchart-grid--2 { grid-template-columns: 1fr 1fr; }
-.pchart-grid--3 { grid-template-columns: repeat(3, 1fr); }
-
-.pchart { border: 1px solid var(--p-rule); border-radius: 3px; padding: 2mm 2.4mm 2.2mm; background: var(--p-surface); }
-.pchart__title { font-size: 8.5pt; font-weight: 700; color: var(--p-ink); text-align: center; }
-.pchart__sub { font-size: 6.6pt; color: var(--p-ink-3); text-align: center; margin-bottom: 1mm; }
-.pchart .legend { font-size: 6.4pt; color: var(--p-ink-2); justify-content: center; gap: 2px 7px; margin-top: 1mm; }
+.pchart { border: 1px solid var(--p-rule); border-radius: 2px; padding: 2mm 2.4mm 2.2mm; background: var(--p-surface); }
+.pchart__title { font-size: 8.5pt; font-weight: 700; color: var(--p-ink); }
+.pchart__sub { font-size: 6.8pt; color: var(--p-ink-3); margin-bottom: 1mm; }
+.pchart .legend { font-size: 6.8pt; color: var(--p-ink-2); gap: 2px 9px; margin-top: 1mm; }
 .pchart .legend__val { color: var(--p-ink-3); }
 
-/* ------------------------------------------------------------ 持倉附錄 --- */
+/* 年期數字條：把曲線上讀不精確的值補成可對照的表 */
+.milestones { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1.5px; margin-top: 2.2mm; }
+.ms {
+  background: var(--p-surface-2); border-top: 1.2px solid var(--p-brand-lt);
+  padding: 1.6mm 1.5mm; text-align: center;
+}
+.ms__y { font-size: 7pt; color: var(--p-brand-dk); font-weight: 700; letter-spacing: .06em; }
+.ms__v { font-size: 8.6pt; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.ms__g { font-size: 6.6pt; color: var(--p-ink-3); font-variant-numeric: tabular-nums; }
+
+/* -------------------------------------------------------- 分散度長條 ---- */
+
+.pspread { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; }
+.psp__label { font-size: 7.5pt; font-weight: 700; color: var(--p-ink-2); margin-bottom: 1mm; }
+.psp__bar { display: flex; height: 6.5mm; border-radius: 2px; overflow: hidden; gap: 1.5px; }
+.psp__seg {
+  display: grid; place-items: center; min-width: 0; overflow: hidden;
+  color: #fff; font-size: 7pt; font-weight: 700; white-space: nowrap;
+  font-variant-numeric: tabular-nums; text-shadow: 0 0 2px rgba(0,0,0,.35);
+}
+.psp__keys { display: flex; flex-wrap: wrap; gap: 1mm 4mm; margin-top: 1.2mm; font-size: 7pt; color: var(--p-ink-2); }
+.psp__key { display: inline-flex; align-items: center; gap: 1.4mm; }
+.psp__dot { width: 2.2mm; height: 2.2mm; border-radius: 1px; flex: none; }
+
+/* ---------------------------------------------------------- 持倉附錄 ---- */
 
 .hold-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
-.hold-card { border: 1px solid var(--p-rule); border-radius: 3px; overflow: hidden; break-inside: avoid; }
-.hold-card__head { background: var(--p-navy-deep); color: #fff; padding: 2.2mm 3mm; }
-.hold-card__head h4 { font-size: 9pt; line-height: 1.35; }
-.hold-card__head .sub { font-size: 7pt; opacity: .78; margin-top: .6mm; font-variant-numeric: tabular-nums; }
-.hold-card table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
-.hold-card th { background: var(--p-surface-2); color: var(--p-ink-3); font-size: 7.5pt; text-align: left; padding: 1.4mm 3mm; font-weight: 700; }
-.hold-card td { padding: 1.6mm 3mm; border-top: 1px solid var(--p-rule); }
-.hold-card td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--p-navy); }
+.hold-card { border: 1px solid var(--p-rule); border-radius: 2px; overflow: hidden; break-inside: avoid; }
+.hold-card__head { background: var(--p-tint); border-bottom: 1.2px solid var(--p-brand); padding: 2mm 3mm; }
+.hold-card__head h4 { font-size: 8.6pt; line-height: 1.35; color: var(--p-brand-dk); }
+.hold-card__head .sub { font-size: 6.8pt; color: var(--p-ink-2); margin-top: .5mm; font-variant-numeric: tabular-nums; }
+.hold-card table { width: 100%; border-collapse: collapse; font-size: 8.2pt; }
+.hold-card th { background: var(--p-surface-2); color: var(--p-ink-3); font-size: 7pt; text-align: left; padding: 1.2mm 3mm; font-weight: 700; }
+.hold-card td { padding: 1.5mm 3mm; border-top: 1px solid var(--p-rule); }
+.hold-card td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--p-brand-dk); }
 
-/* ------------------------------------------------------------ 風險警語 --- */
+/* ==================================================== 長期持有小叮嚀 ==== */
+
+.tips-lead {
+  background: var(--p-tint); border-left: 1.6mm solid var(--p-brand);
+  padding: 4.5mm 5mm; margin-bottom: 6mm; border-radius: 2px;
+}
+.tips-lead h3 {
+  font-family: var(--font-doc); font-size: 15.5pt; color: var(--p-brand-dk);
+  letter-spacing: .04em; margin-bottom: 1.2mm;
+}
+.tips-lead p { font-size: 9.2pt; color: var(--p-ink-2); line-height: 1.8; }
+
+.tips-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6.5mm 7mm; }
+.tip { display: grid; grid-template-columns: 9.5mm 1fr; gap: 1mm; break-inside: avoid; }
+.tip__n {
+  font-family: var(--font-num); font-size: 18pt; font-weight: 700;
+  color: var(--p-brand-lt); line-height: 1; letter-spacing: -.03em;
+}
+.tip__title { font-size: 10.5pt; font-weight: 700; color: var(--p-ink); margin-bottom: 1.4mm; line-height: 1.35; }
+.tip__body { font-size: 8.8pt; color: var(--p-ink-2); line-height: 1.8; }
+.tip__body b { color: var(--p-brand-dk); }
+
+.tips-close {
+  margin-top: auto; padding-top: 4mm; border-top: 1.2px solid var(--p-brand);
+  display: grid; grid-template-columns: 1fr 62mm; gap: 6mm; align-items: end;
+}
+.tips-close__note { font-size: 8.8pt; color: var(--p-ink-2); line-height: 1.8; }
+.tips-close__note b { color: var(--p-brand-dk); }
+.sign { font-size: 8.4pt; color: var(--p-ink-2); }
+.sign__row { display: flex; align-items: flex-end; gap: 2mm; margin-bottom: 3mm; }
+.sign__k { white-space: nowrap; font-weight: 700; }
+.sign__line { flex: 1; border-bottom: 1px solid var(--p-rule-2); height: 5mm; }
+.sign__val { flex: 1; border-bottom: 1px solid var(--p-rule-2); height: 5mm; font-weight: 700; color: var(--p-ink); }
+
+/* ---------------------------------------------------------- 風險警語 ---- */
 
 .disclaimer { margin-top: auto; padding-top: 2.6mm; border-top: 1px solid var(--p-rule); }
-.disclaimer h5 { font-size: 8pt; color: var(--p-ink); letter-spacing: .04em; margin-bottom: 1.2mm; }
+.disclaimer h5 { font-size: 7.5pt; color: var(--p-brand-dk); letter-spacing: .04em; margin-bottom: 1mm; }
 .disclaimer ol { margin: 0; padding-left: 4mm; font-size: 6.4pt; color: var(--p-ink-2); line-height: 1.45; }
-.disclaimer li { margin-bottom: .6mm; }
+.disclaimer li { margin-bottom: .5mm; }
 .disclaimer b { color: var(--p-ink); }
 
 .sheet__foot {
@@ -563,31 +687,35 @@ table.ptable tfoot td {
 }
 .sheet__foot .pageno { margin-left: auto; font-variant-numeric: tabular-nums; }
 
-/* ---------------------------------------------------------- 比較表版面 --- */
+/* ---------------------------------------------------------- 比較表 ------ */
 
-.cmp-head { border-bottom: 1.5px solid var(--p-ink); padding-bottom: 5px; margin-bottom: 4mm;
-  display: flex; align-items: flex-end; gap: 12px; }
-.cmp-head__title { font-family: var(--font-doc); font-size: 16pt; color: var(--p-navy-deep); font-weight: 700; }
-.cmp-head__sub { font-size: 8.5pt; color: var(--p-ink-2); margin-top: 1mm; }
-.cmp-head__no { margin-left: auto; font-family: var(--font-num); font-size: 14pt; color: var(--p-brass); font-weight: 700; }
+.cmp-head {
+  border-bottom: 1.2px solid var(--p-brand); padding-bottom: 1.6mm; margin-bottom: 3.4mm;
+  display: flex; align-items: flex-end; gap: 4mm;
+}
+.cmp-head__title { font-family: var(--font-doc); font-size: 15pt; color: var(--p-brand-dk); font-weight: 700; }
+.cmp-head__sub { font-size: 8pt; color: var(--p-ink-2); margin-top: .8mm; }
+.cmp-head__no { margin-left: auto; font-family: var(--font-num); font-size: 15pt; color: var(--p-brand-lt); font-weight: 700; }
 
 table.cmp { width: 100%; border-collapse: collapse; font-size: 8.5pt; table-layout: fixed; }
 table.cmp th {
-  background: var(--p-navy-deep); color: #fff; font-size: 7.5pt; font-weight: 700;
-  text-align: left; padding: 2mm 2.2mm; letter-spacing: .03em;
+  background: var(--p-brand-dk); color: #fff; font-size: 7.5pt; font-weight: 700;
+  text-align: left; padding: 1.8mm 2.2mm; letter-spacing: .03em;
 }
 table.cmp td { padding: 4mm 2.2mm; border-bottom: 1px solid var(--p-rule); vertical-align: top; }
 table.cmp tbody tr:nth-child(even) { background: var(--p-surface-2); }
-table.cmp .c-name { font-weight: 700; font-size: 8.8pt; color: var(--p-navy-deep); }
+table.cmp .c-name { font-weight: 700; font-size: 8.8pt; color: var(--p-brand-dk); }
 table.cmp .c-sub { font-size: 7pt; color: var(--p-ink-3); margin-top: .6mm; }
 table.cmp .c-nav { font-variant-numeric: tabular-nums; font-weight: 700; }
 table.cmp .c-hold { font-size: 7.6pt; color: var(--p-ink-2); line-height: 1.5; }
 table.cmp .c-hold b { font-weight: 700; color: var(--p-ink); font-variant-numeric: tabular-nums; }
 
-.cmp-note { margin-top: 3mm; font-size: 7.5pt; color: var(--p-ink-2); background: var(--p-navy-soft);
-  border-left: 2px solid var(--p-navy); padding: 2mm 3mm; }
+.cmp-note {
+  margin-top: 3mm; font-size: 7.5pt; color: var(--p-ink-2);
+  background: var(--p-tint); border-left: 1.2mm solid var(--p-brand); padding: 2mm 3mm;
+}
 
-/* --------------------------------------------------------------- 列印 ---- */
+/* ------------------------------------------------------------- 列印 ----- */
 
 /* 移到畫面外而不是 display:none —— 隱藏的元素量不到高度，
    自動縮放就無法在列印前算出正確比例。 */
@@ -615,7 +743,7 @@ table.cmp .c-hold b { font-weight: 700; color: var(--p-ink); font-variant-numeri
   #printRoot .sheet:last-child { break-after: auto; page-break-after: auto; }
 
   .sheet, .sheet * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .hold-card, .pchart, .pstat, tr { break-inside: avoid; page-break-inside: avoid; }
+  .hold-card, .pchart, .tip, tr { break-inside: avoid; page-break-inside: avoid; }
 }
 
 </style>
@@ -823,6 +951,17 @@ table.cmp .c-hold b { font-weight: 700; color: var(--p-ink); font-variant-numeri
       </div>
     </div>
 
+    <div class="card" style="margin-bottom:16px">
+      <div class="card__head"><h3>自動更新狀態</h3></div>
+      <div class="card__body" style="display:flex;flex-direction:column;gap:10px">
+        <p class="nav-status" id="navStatus"></p>
+        <p class="muted" style="font-size:12.5px;line-height:1.7">
+          掛牌 ETF（0050、006208、0056、00981A、QQQ、SPY、IVV）的收盤價由 GitHub Actions
+          每個交易日自動抓取。境外基金沒有可穩定存取的公開來源，仍須用下方的「貼上更新」維護。
+        </p>
+      </div>
+    </div>
+
     <div class="notice" style="margin-bottom:16px">
       <span class="notice__mark">！</span>
       <span>
@@ -874,6 +1013,73 @@ table.cmp .c-hold b { font-weight: 700; color: var(--p-ink); font-variant-numeri
 <div id="printRoot" aria-hidden="true"></div>
 
 <script>
+/* ==== data/nav.json（打包當下的自動更新快照）==== */
+window.NAV_SNAPSHOT = {
+  "updatedAt": "2026-08-14T01:06:34.656Z",
+  "note": "僅涵蓋公開掛牌 ETF。境外基金無可穩定存取的公開來源，請用網站的「貼上更新」維護。",
+  "problems": [],
+  "quotes": {
+    "tw-0050": {
+      "price": 106.7,
+      "date": "2026-08-13",
+      "currency": "TWD",
+      "kind": "收盤價",
+      "source": "臺灣證券交易所 OpenAPI",
+      "symbol": "0050"
+    },
+    "tw-006208": {
+      "price": 244.4,
+      "date": "2026-08-13",
+      "currency": "TWD",
+      "kind": "收盤價",
+      "source": "臺灣證券交易所 OpenAPI",
+      "symbol": "006208"
+    },
+    "tw-0056": {
+      "price": 53,
+      "date": "2026-08-13",
+      "currency": "TWD",
+      "kind": "收盤價",
+      "source": "臺灣證券交易所 OpenAPI",
+      "symbol": "0056"
+    },
+    "tw-00981a": {
+      "price": 29.95,
+      "date": "2026-08-13",
+      "currency": "TWD",
+      "kind": "收盤價",
+      "source": "臺灣證券交易所 OpenAPI",
+      "symbol": "00981A"
+    },
+    "us-qqq": {
+      "price": 732.07,
+      "date": "2026-08-13",
+      "currency": "USD",
+      "kind": "收盤價",
+      "source": "Yahoo Finance",
+      "symbol": "QQQ"
+    },
+    "us-spy": {
+      "price": 777.88,
+      "date": "2026-08-13",
+      "currency": "USD",
+      "kind": "收盤價",
+      "source": "Yahoo Finance",
+      "symbol": "SPY"
+    },
+    "us-ivv": {
+      "price": 781.47,
+      "date": "2026-08-13",
+      "currency": "USD",
+      "kind": "收盤價",
+      "source": "Yahoo Finance",
+      "symbol": "IVV"
+    }
+  }
+}
+;
+</script>
+<script>
 /* ==== assets/funds.js ==== */
 /* =============================================================================
    基金資料庫（預設值）
@@ -922,8 +1128,8 @@ window.CATEGORIES = [
 ];
 
 window.DEFAULT_META = {
+  /* 掛牌 ETF 由 GitHub Actions 每日覆寫，此處僅為首次載入的預設基準日 */
   navAsOf: '2026-08-10',
-  navNote: '淨值：截至 2026/08/10 最新可得公告｜持股：最近一期公開月報',
   rrNote: 'RR 依台灣銷售平台常用分級；不同通路可能略有差異',
   fxUSDTWD: 29.5
 };
@@ -1432,134 +1638,24 @@ window.DEFAULT_FUNDS = [
   function money(v) { return 'NT$ ' + Math.round(v).toLocaleString('en-US'); }
 
   /* ==========================================================================
-     折線圖 — 預估資產價值曲線
-     opts: { data:[{label,value,note}], baseline, height }
+     堆疊面積圖 — 資產成長軌跡
+     把「總值成長」與「獲利占多少」合成同一張圖：下層是投入本金，
+     上層是各種獲利，總高度就是預估總值。
+     opts: { labels:[], series:[{name,color,values}], height }
      ====================================================================== */
-  function lineChart(box, opts) {
-    var data = opts.data || [];
-    box.textContent = '';
-    if (!data.length) return;
-
-    var W = 480, H = opts.height || 190;
-    var m = { t: 12, r: 16, b: 26, l: 52 };
-    var iw = W - m.l - m.r, ih = H - m.t - m.b;
-
-    var svg = el('svg', {
-      viewBox: '0 0 ' + W + ' ' + H, class: 'chart-svg',
-      preserveAspectRatio: 'xMidYMid meet', role: 'img',
-      'aria-label': opts.ariaLabel || '預估資產價值曲線'
-    }, box);
-
-    var vals = data.map(function (d) { return d.value; });
-    if (opts.baseline) vals.push(opts.baseline);
-    var max = Math.max.apply(null, vals);
-    var min = Math.min.apply(null, vals);
-    var pad = (max - min) * 0.18 || max * 0.1 || 1;
-    var lo = Math.max(0, min - pad), hi = max + pad;
-    var step = niceStep(hi - lo, 4);
-    lo = Math.floor(lo / step) * step;
-    hi = Math.ceil(hi / step) * step;
-
-    var x = function (i) { return m.l + (data.length === 1 ? iw / 2 : (iw * i) / (data.length - 1)); };
-    var y = function (v) { return m.t + ih - ((v - lo) / (hi - lo)) * ih; };
-
-    /* 水平格線 + y 軸刻度 */
-    for (var g = lo; g <= hi + 1e-6; g += step) {
-      el('line', { x1: m.l, x2: m.l + iw, y1: y(g), y2: y(g), stroke: 'var(--c-grid)', 'stroke-width': 1 }, svg);
-      el('text', {
-        x: m.l - 7, y: y(g) + 3.5, 'text-anchor': 'end',
-        fill: 'var(--c-ink-3)', 'font-size': 9, 'font-family': 'var(--font-num)'
-      }, svg).textContent = shortNum(g);
-    }
-
-    /* 投入本金參考線 */
-    if (opts.baseline) {
-      el('line', {
-        x1: m.l, x2: m.l + iw, y1: y(opts.baseline), y2: y(opts.baseline),
-        stroke: 'var(--c-axis)', 'stroke-width': 1, 'stroke-dasharray': '4 3'
-      }, svg);
-      el('text', {
-        x: m.l + iw, y: y(opts.baseline) - 5, 'text-anchor': 'end',
-        fill: 'var(--c-ink-3)', 'font-size': 8.5
-      }, svg).textContent = '投入本金';
-    }
-
-    /* 面積 + 線 */
-    var dLine = '', dArea = '';
-    data.forEach(function (d, i) {
-      dLine += (i ? 'L' : 'M') + x(i).toFixed(2) + ' ' + y(d.value).toFixed(2) + ' ';
-    });
-    dArea = dLine + 'L' + x(data.length - 1).toFixed(2) + ' ' + (m.t + ih) + ' L' + x(0).toFixed(2) + ' ' + (m.t + ih) + ' Z';
-
-    var gid = 'ln' + Math.random().toString(36).slice(2, 8);
-    var defs = el('defs', {}, svg);
-    var lg = el('linearGradient', { id: gid, x1: 0, y1: 0, x2: 0, y2: 1 }, defs);
-    el('stop', { offset: '0%', 'stop-color': 'var(--series-1)', 'stop-opacity': .22 }, lg);
-    el('stop', { offset: '100%', 'stop-color': 'var(--series-1)', 'stop-opacity': .02 }, lg);
-
-    el('path', { d: dArea, fill: 'url(#' + gid + ')', stroke: 'none' }, svg);
-    el('path', { d: dLine.trim(), fill: 'none', stroke: 'var(--series-1)', 'stroke-width': 2,
-                 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, svg);
-
-    /* x 軸標籤與資料點 */
-    data.forEach(function (d, i) {
-      el('text', {
-        x: x(i), y: m.t + ih + 15, 'text-anchor': 'middle',
-        fill: 'var(--c-ink-2)', 'font-size': 9, 'font-family': 'var(--font-num)'
-      }, svg).textContent = d.label;
-
-      var last = i === data.length - 1;
-      el('circle', {
-        cx: x(i), cy: y(d.value), r: last ? 4.5 : 3,
-        fill: 'var(--series-1)', stroke: 'var(--c-surface)', 'stroke-width': 2
-      }, svg);
-    });
-
-    /* 端點直接標值 */
-    var lastD = data[data.length - 1];
-    el('text', {
-      x: x(data.length - 1), y: y(lastD.value) - 11, 'text-anchor': 'end',
-      fill: 'var(--c-ink)', 'font-size': 10, 'font-weight': 700, 'font-family': 'var(--font-num)'
-    }, svg).textContent = shortNum(lastD.value);
-
-    /* 互動層 */
-    var cross = el('line', {
-      y1: m.t, y2: m.t + ih, stroke: 'var(--c-axis)', 'stroke-width': 1,
-      'stroke-dasharray': '3 3', opacity: 0
-    }, svg);
-
-    data.forEach(function (d, i) {
-      var bw = iw / data.length;
-      el('rect', {
-        x: m.l + bw * i, y: m.t, width: bw, height: ih, fill: 'transparent',
-        style: 'cursor:crosshair'
-      }, svg).addEventListener('mousemove', function (e) {
-        cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i));
-        cross.setAttribute('opacity', 1);
-        showTip('<div class="tip-title">' + d.label + '　' + (d.note || '') + '</div>' +
-                '預估總值　<b>' + money(d.value) + '</b>', e);
-      });
-    });
-    svg.addEventListener('mouseleave', function () { cross.setAttribute('opacity', 0); hideTip(); });
-  }
-
-  /* ==========================================================================
-     堆疊長條圖 — 投入本金 / 預估獲利
-     opts: { labels:[], series:[{name,color,values:[]}], height }
-     ====================================================================== */
-  function stackedBar(box, opts) {
+  function stackedArea(box, opts) {
     var labels = opts.labels || [], series = opts.series || [];
     box.textContent = '';
     if (!labels.length) return;
 
-    var W = 480, H = opts.height || 190;
-    var m = { t: 12, r: 12, b: 26, l: 52 };
+    var W = opts.width || 480, H = opts.height || 168;
+    var m = { t: 14, r: 14, b: 24, l: 50 };
     var iw = W - m.l - m.r, ih = H - m.t - m.b;
 
     var svg = el('svg', {
       viewBox: '0 0 ' + W + ' ' + H, class: 'chart-svg',
       preserveAspectRatio: 'xMidYMid meet', role: 'img',
-      'aria-label': opts.ariaLabel || '累積獲利結構圖'
+      'aria-label': opts.ariaLabel || '資產成長軌跡'
     }, box);
 
     var totals = labels.map(function (_, i) {
@@ -1568,122 +1664,80 @@ window.DEFAULT_FUNDS = [
     var max = Math.max.apply(null, totals) || 1;
     var step = niceStep(max, 4);
     var hi = Math.ceil(max / step) * step;
+
+    var x = function (i) { return m.l + (labels.length === 1 ? iw / 2 : (iw * i) / (labels.length - 1)); };
     var y = function (v) { return m.t + ih - (v / hi) * ih; };
 
     for (var g = 0; g <= hi + 1e-6; g += step) {
       el('line', { x1: m.l, x2: m.l + iw, y1: y(g), y2: y(g), stroke: 'var(--c-grid)', 'stroke-width': 1 }, svg);
       el('text', {
-        x: m.l - 7, y: y(g) + 3.5, 'text-anchor': 'end',
-        fill: 'var(--c-ink-3)', 'font-size': 9, 'font-family': 'var(--font-num)'
+        x: m.l - 6, y: y(g) + 3.5, 'text-anchor': 'end',
+        fill: 'var(--c-ink-3)', 'font-size': 8.5, 'font-family': 'var(--font-num)'
       }, svg).textContent = shortNum(g);
     }
-    el('line', { x1: m.l, x2: m.l + iw, y1: y(0), y2: y(0), stroke: 'var(--c-axis)', 'stroke-width': 1 }, svg);
 
-    var slot = iw / labels.length;
-    var bw = Math.min(46, slot * 0.56);
+    /* 由下往上疊，每層畫出自己的上緣與下緣所圍出的面積 */
+    var lower = labels.map(function () { return 0; });
+    series.forEach(function (ser) {
+      var upper = lower.map(function (v, i) { return v + Math.max(0, ser.values[i] || 0); });
 
-    labels.forEach(function (lab, i) {
-      var cx = m.l + slot * i + slot / 2;
-      var acc = 0;
-      series.forEach(function (ser, si) {
-        var v = Math.max(0, ser.values[i] || 0);
-        if (v <= 0) return;
-        var yTop = y(acc + v), yBot = y(acc);
-        var h = Math.max(0, yBot - yTop - (si > 0 ? 2 : 0)); /* 2px 隔線讓分段不相黏 */
-        var isTop = si === series.length - 1;
-        var r = isTop ? 4 : 0;
-        var rect = el('rect', {
-          x: cx - bw / 2, y: yTop, width: bw, height: h,
-          rx: r, ry: r, fill: ser.color, style: 'cursor:pointer'
-        }, svg);
-        if (isTop && r) { /* 只讓頂端圓角，底部維持切齊基線 */
-          rect.setAttribute('rx', 4); rect.setAttribute('ry', 4);
-        }
-        acc += v;
-        rect.addEventListener('mousemove', function (e) {
-          showTip('<div class="tip-title">' + lab + '</div>' +
-                  ser.name + '　<b>' + money(v) + '</b><br>合計　<b>' + money(totals[i]) + '</b>', e);
-        });
-        rect.addEventListener('mouseleave', hideTip);
-      });
+      var d = '';
+      upper.forEach(function (v, i) { d += (i ? 'L' : 'M') + x(i).toFixed(2) + ' ' + y(v).toFixed(2) + ' '; });
+      for (var i = lower.length - 1; i >= 0; i--) d += 'L' + x(i).toFixed(2) + ' ' + y(lower[i]).toFixed(2) + ' ';
+      d += 'Z';
 
-      el('text', {
-        x: cx, y: m.t + ih + 15, 'text-anchor': 'middle',
-        fill: 'var(--c-ink-2)', 'font-size': 9, 'font-family': 'var(--font-num)'
-      }, svg).textContent = lab;
-    });
-  }
-
-  /* ==========================================================================
-     甜甜圈圖 — 資產類別 / 投資區域 / 幣別
-     opts: { slices:[{label,value,color}], height }
-     ====================================================================== */
-  function donut(box, opts) {
-    var slices = (opts.slices || []).filter(function (s) { return s.value > 0; });
-    box.textContent = '';
-    if (!slices.length) return;
-
-    var S = 168, H = opts.height || S;
-    var cx = S / 2, cy = H / 2;
-    var rOuter = Math.min(S, H) / 2 - 20;
-    var rInner = rOuter * 0.6;
-
-    var svg = el('svg', {
-      viewBox: '0 0 ' + S + ' ' + H, class: 'chart-svg',
-      preserveAspectRatio: 'xMidYMid meet', role: 'img',
-      'aria-label': opts.ariaLabel || '配置比例圖',
-      /* 甜甜圈不隨欄寬無限放大，否則會蓋掉版面節奏 */
-      style: 'max-width:' + (opts.maxWidth || 190) + 'px; margin:0 auto;'
-    }, box);
-
-    var total = slices.reduce(function (s, x) { return s + x.value; }, 0);
-    var ang = -Math.PI / 2;
-
-    function pt(r, a) { return [cx + r * Math.cos(a), cy + r * Math.sin(a)]; }
-
-    slices.forEach(function (s) {
-      var sweep = (s.value / total) * Math.PI * 2;
-      var a0 = ang, a1 = ang + sweep;
-      ang = a1;
-
-      var big = sweep > Math.PI ? 1 : 0;
-      var p0 = pt(rOuter, a0), p1 = pt(rOuter, a1);
-      var q1 = pt(rInner, a1), q0 = pt(rInner, a0);
-      var d = 'M' + p0[0] + ' ' + p0[1] +
-              'A' + rOuter + ' ' + rOuter + ' 0 ' + big + ' 1 ' + p1[0] + ' ' + p1[1] +
-              'L' + q1[0] + ' ' + q1[1] +
-              'A' + rInner + ' ' + rInner + ' 0 ' + big + ' 0 ' + q0[0] + ' ' + q0[1] + 'Z';
-
-      var path = el('path', {
-        d: d, fill: s.color,
-        stroke: 'var(--c-surface)', 'stroke-width': 2, /* 2px 紙面隔線 */
-        style: 'cursor:pointer'
+      el('path', {
+        d: d, fill: ser.color, 'fill-opacity': ser.solid ? .92 : .55,
+        stroke: 'var(--c-surface)', 'stroke-width': 1.2   /* 1.2px 紙面隔線讓層與層不相黏 */
       }, svg);
 
-      var pct = (s.value / total) * 100;
-      path.addEventListener('mousemove', function (e) {
-        showTip('<div class="tip-title">' + s.label + '</div><b>' + pct.toFixed(1) + '%</b>　' + money(s.value), e);
-      });
-      path.addEventListener('mouseleave', hideTip);
-
-      /* 占比夠大才直接標在圖上，避免文字打架 */
-      if (pct >= 12) {
-        var mid = (a0 + a1) / 2;
-        var lp = pt((rOuter + rInner) / 2, mid);
-        el('text', {
-          x: lp[0], y: lp[1] + 3.5, 'text-anchor': 'middle',
-          fill: '#fff', 'font-size': 10, 'font-weight': 700, 'font-family': 'var(--font-num)',
-          style: 'paint-order:stroke; stroke:rgba(0,0,0,.22); stroke-width:2.5px;'
-        }, svg).textContent = Math.round(pct) + '%';
-      }
+      lower = upper;
     });
 
-    if (opts.centerLabel) {
+    /* 總值線與端點 */
+    var dTop = '';
+    totals.forEach(function (v, i) { dTop += (i ? 'L' : 'M') + x(i).toFixed(2) + ' ' + y(v).toFixed(2) + ' '; });
+    el('path', {
+      d: dTop.trim(), fill: 'none', stroke: 'var(--series-1)', 'stroke-width': 2,
+      'stroke-linejoin': 'round', 'stroke-linecap': 'round'
+    }, svg);
+
+    labels.forEach(function (lab, i) {
+      el('circle', {
+        cx: x(i), cy: y(totals[i]), r: i === labels.length - 1 ? 4 : 2.6,
+        fill: 'var(--series-1)', stroke: 'var(--c-surface)', 'stroke-width': 1.6
+      }, svg);
       el('text', {
-        x: cx, y: cy + 4, 'text-anchor': 'middle',
-        fill: 'var(--c-ink-2)', 'font-size': 10, 'font-weight': 700
-      }, svg).textContent = opts.centerLabel;
-    }
+        x: x(i), y: m.t + ih + 14, 'text-anchor': 'middle',
+        fill: 'var(--c-ink-2)', 'font-size': 8.5, 'font-family': 'var(--font-num)'
+      }, svg).textContent = lab;
+    });
+
+    el('text', {
+      x: x(labels.length - 1), y: y(totals[totals.length - 1]) - 9, 'text-anchor': 'end',
+      fill: 'var(--c-ink)', 'font-size': 9.5, 'font-weight': 700, 'font-family': 'var(--font-num)'
+    }, svg).textContent = shortNum(totals[totals.length - 1]);
+
+    /* 互動層 */
+    var cross = el('line', {
+      y1: m.t, y2: m.t + ih, stroke: 'var(--c-axis)', 'stroke-width': 1,
+      'stroke-dasharray': '3 3', opacity: 0
+    }, svg);
+
+    labels.forEach(function (lab, i) {
+      var bw = iw / labels.length;
+      el('rect', {
+        x: m.l + bw * i, y: m.t, width: bw, height: ih, fill: 'transparent', style: 'cursor:crosshair'
+      }, svg).addEventListener('mousemove', function (e) {
+        var rows = series.map(function (ser) {
+          return ser.name + '　<b>' + money(Math.max(0, ser.values[i] || 0)) + '</b>';
+        }).join('<br>');
+        cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i));
+        cross.setAttribute('opacity', 1);
+        showTip('<div class="tip-title">' + lab + '　總值 ' + money(totals[i]) + '</div>' + rows, e);
+      });
+    });
+    svg.addEventListener('mouseleave', function () { cross.setAttribute('opacity', 0); hideTip(); });
   }
 
   /* 圖例 — 兩個以上系列一律附圖例，識別不靠顏色單獨承擔 */
@@ -1712,9 +1766,7 @@ window.DEFAULT_FUNDS = [
   }
 
   window.Charts = {
-    line: lineChart,
-    stacked: stackedBar,
-    donut: donut,
+    area: stackedArea,
     legend: legend,
     shortNum: shortNum,
     hideTip: hideTip
@@ -1829,6 +1881,79 @@ window.DEFAULT_FUNDS = [
         }));
       } catch (e) { /* 隱私模式或容量已滿時忽略，功能不受影響 */ }
     }, 250);
+  }
+
+  /* ==========================================================================
+     自動更新的價格
+     -----------------------------------------------------------------------
+     由 GitHub Actions 每日抓取後寫入 data/nav.json（同網域，沒有跨網域問題）。
+     單一檔案版本則由打包程式把同一份資料塞成 window.NAV_SNAPSHOT。
+     兩者都拿不到時就沿用 funds.js 的內建值，功能不受影響。
+     ====================================================================== */
+
+  /* 手動改過的值就不再是自動抓來的，標記必須拿掉，否則畫面會說謊。
+     （下一次自動更新仍會覆蓋這幾檔掛牌 ETF，這是每日更新的預期行為。）*/
+  function clearAutoTag(f) {
+    delete f.navSource;
+    delete f.navKind;
+  }
+
+  function applyNavSnapshot(snap) {
+    if (!snap || !snap.quotes) return 0;
+    var n = 0;
+    Object.keys(snap.quotes).forEach(function (id) {
+      var q = snap.quotes[id];
+      var f = fundById(id);
+      if (!f || typeof q.price !== 'number') return;
+      f.nav = q.price;
+      f.navDate = q.date;
+      f.navKind = q.kind || '收盤價';
+      f.navSource = q.source || '自動更新';
+      n++;
+    });
+    state.meta.navAuto = { updatedAt: snap.updatedAt, count: n, problems: snap.problems || [] };
+    /* 自動更新的日期比手動填的可靠，讓文件基準日跟著走 */
+    var dates = Object.keys(snap.quotes)
+      .map(function (k) { return snap.quotes[k].date; })
+      .filter(Boolean).sort();
+    if (dates.length) state.meta.navAsOf = dates[dates.length - 1];
+    return n;
+  }
+
+  function loadNavSnapshot() {
+    if (window.NAV_SNAPSHOT) {
+      applyNavSnapshot(window.NAV_SNAPSHOT);
+      return Promise.resolve(true);
+    }
+    /* file:// 沒有同網域可言，直接跳過，不要在主控台留下嚇人的錯誤 */
+    if (location.protocol === 'file:') return Promise.resolve(false);
+
+    return fetch('data/nav.json', { cache: 'no-cache' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (snap) { return applyNavSnapshot(snap) > 0; })
+      ['catch'](function () { return false; });
+  }
+
+  function renderNavStatus() {
+    var host = $('#navStatus');
+    if (!host) return;
+    host.textContent = '';
+    var auto = state.meta.navAuto;
+    if (!auto || !auto.count) {
+      host.appendChild(h('span', { class: 'dot dot--idle' }));
+      host.appendChild(h('span', { text: '目前使用內建淨值。放上 GitHub Pages 後，每日自動更新才會生效。' }));
+      return;
+    }
+    var when = new Date(auto.updatedAt);
+    host.appendChild(h('span', { class: 'dot' }));
+    host.appendChild(h('span', {
+      text: '已自動更新 ' + auto.count + ' 檔掛牌 ETF 的收盤價　·　最後更新 ' +
+            when.getFullYear() + '/' + (when.getMonth() + 1) + '/' + when.getDate() + ' ' +
+            String(when.getHours()).padStart(2, '0') + ':' + String(when.getMinutes()).padStart(2, '0')
+    }));
+    if (auto.problems && auto.problems.length) {
+      host.appendChild(h('span', { class: 'muted', text: '（' + auto.problems.length + ' 項未更新）' }));
+    }
   }
 
   function fundById(id) {
@@ -1984,8 +2109,9 @@ window.DEFAULT_FUNDS = [
 
   function navHTML(f) {
     if (f.nav === null || f.nav === undefined) return '<span class="muted">待平台核對</span>';
+    var tag = f.navSource ? '<br><span class="src-tag">自動・' + esc(f.navKind || '收盤價') + '</span>' : '';
     return '<b>' + f.nav.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 }) +
-           '</b> ' + f.currency + '<br><span class="muted">' + fmtDate(f.navDate) + '</span>';
+           '</b> ' + f.currency + '<br><span class="muted">' + fmtDate(f.navDate) + '</span>' + tag;
   }
 
   function renderCompare() {
@@ -2186,75 +2312,35 @@ window.DEFAULT_FUNDS = [
     var host = $('#previewCharts');
     host.textContent = '';
     if (!res.items.length) {
-      host.appendChild(h('div', { class: 'empty', text: '加入標的後即可預覽成長曲線與配置結構。' }));
+      host.appendChild(h('div', { class: 'empty', text: '加入標的後即可預覽成長軌跡與配置結構。' }));
       return;
     }
 
-    var topRow = h('div', { class: 'chart-grid' });
-    host.appendChild(topRow);
-
-    var lineBox = h('div', { class: 'chart-box' }, [
-      h('h4', { text: '預估資產價值曲線' }),
-      h('div', { class: 'chart-sub', text: state.plan.mode === 'total' ? '配息再投入（總報酬）' : '配息領出：本金部位＋累計已領配息' })
+    /* 畫面預覽與建議書用同一套視覺語言，避免「螢幕好看、印出來不一樣」 */
+    var areaBox = h('div', { class: 'chart-box' }, [
+      h('h4', { text: '預估資產成長軌跡' }),
+      h('div', { class: 'chart-sub', text:
+        '下層為投入本金，上層為預估獲利　·　' +
+        (state.plan.mode === 'total' ? '配息再投入（總報酬）' : '配息領出：本金部位＋累計已領配息') })
     ]);
-    var lineSvg = h('div', {});
-    lineBox.appendChild(lineSvg);
-    topRow.appendChild(lineBox);
-    window.Charts.line(lineSvg, {
-      data: res.projections.map(function (p) {
-        return { label: p.years + 'Y', value: p.total, note: '年化 ' + pct(p.cagr, 1) };
-      }),
-      baseline: res.amount
-    });
+    var areaMount = h('div', {});
+    areaBox.appendChild(areaMount);
+    host.appendChild(areaBox);
 
-    var barBox = h('div', { class: 'chart-box' }, [
-      h('h4', { text: '累積獲利結構圖' }),
-      h('div', { class: 'chart-sub', text: '投入本金與預估獲利的組成' })
-    ]);
-    var barSvg = h('div', {});
-    barBox.appendChild(barSvg);
-    topRow.appendChild(barBox);
-    buildStack(barSvg, barBox, res);
-
-    var donutRow = h('div', { class: 'chart-grid chart-grid--donuts' });
-    host.appendChild(donutRow);
-
-    ['assetClass', 'region', 'currency'].forEach(function (key) {
-      var titles = { assetClass: '資產類別', region: '投資區域', currency: '幣別比例' };
-      var slices = groupBy(res, key);
-      var box = h('div', { class: 'chart-box' }, [
-        h('h4', { text: titles[key] }),
-        h('div', { class: 'chart-sub', text: '依投資金額占比' })
-      ]);
-      var svgBox = h('div', {});
-      box.appendChild(svgBox);
-      donutRow.appendChild(box);
-      window.Charts.donut(svgBox, { slices: slices, height: 168 });
-      window.Charts.legend(box, slices.map(function (s) {
-        return { label: s.label, color: s.color, value: (s.value / res.amount * 100).toFixed(1) + '%' };
-      }));
-    });
-  }
-
-  function buildStack(mount, box, res, height) {
-    var series;
-    if (state.plan.mode === 'total') {
-      series = [
-        { name: '投入本金', color: 'var(--series-1)', values: res.projections.map(function () { return res.amount; }) },
-        { name: '預估獲利', color: 'var(--series-2)', values: res.projections.map(function (p) { return Math.max(0, p.gain); }) }
-      ];
-    } else {
-      series = [
-        { name: '投入本金', color: 'var(--series-1)', values: res.projections.map(function () { return res.amount; }) },
-        { name: '資本增值', color: 'var(--series-2)', values: res.projections.map(function (p) { return Math.max(0, p.capital - res.amount); }) },
-        { name: '累計已領配息', color: 'var(--series-3)', values: res.projections.map(function (p) { return p.cumIncome; }) }
-      ];
-    }
-    window.Charts.stacked(mount, {
+    var series = growthSeries(res);
+    window.Charts.area(areaMount, {
       labels: res.projections.map(function (p) { return p.years + 'Y'; }),
-      series: series, height: height
+      series: series, width: 820, height: 200
     });
-    window.Charts.legend(box, series.map(function (s) { return { label: s.name, color: s.color }; }));
+    window.Charts.legend(areaBox, series.map(function (s) { return { label: s.name, color: s.color }; }));
+    areaBox.appendChild(milestoneRow(res));
+
+    var spreadBox = h('div', { class: 'chart-box' }, [
+      h('h4', { text: '風險分散度' }),
+      h('div', { class: 'chart-sub', text: '資產類別、投資區域與幣別的金額占比' })
+    ]);
+    spreadBox.appendChild(spreadBlock(res));
+    host.appendChild(spreadBox);
   }
 
   function renderAllocate() {
@@ -2293,13 +2379,25 @@ window.DEFAULT_FUNDS = [
      建議書（A4）
      ====================================================================== */
 
+  /* 頁尾註記依實際基準日產生，避免與報頭的日期對不起來 */
+  function navNote() {
+    var auto = state.meta.navAuto;
+    return '淨值：截至 ' + fmtDateFull(state.meta.navAsOf) + ' 最新可得' +
+           (auto && auto.count ? '（掛牌 ETF 為自動更新收盤價）' : '公告') +
+           '｜持股：最近一期公開月報';
+  }
+
   function sheet(children, footNote, pageNo, pageTotal) {
     var body = h('div', { class: 'sheet__body' }, children);
-    /* 沒有風險警語的頁面（例如比較表）需要撐開空白，讓頁尾貼齊紙張底部 */
-    if (!body.querySelector('.disclaimer')) body.appendChild(h('div', { style: 'flex:1 1 auto' }));
+    /* 沒有風險警語的頁面（例如比較表）需要撐開空白，讓頁尾貼齊紙張底部。
+       但若頁面本身已有靠 margin-top:auto 沉底的區塊，再塞 spacer 會把空白
+       搶走，反而讓那個區塊浮在中間。 */
+    if (!body.querySelector('.disclaimer, .tips-close')) {
+      body.appendChild(h('div', { style: 'flex:1 1 auto' }));
+    }
     var s = h('div', { class: 'sheet' }, [body]);
     s.appendChild(h('div', { class: 'sheet__foot' }, [
-      h('span', { text: footNote || state.meta.navNote }),
+      h('span', { text: footNote || navNote() }),
       h('span', { class: 'pageno', text: pageNo && pageTotal ? pageNo + ' / ' + pageTotal : '' })
     ]));
     return s;
@@ -2314,7 +2412,7 @@ window.DEFAULT_FUNDS = [
     var body = s.querySelector('.sheet__body');
     if (!body) return;
     body.style.zoom = '';
-    for (var pass = 0; pass < 3; pass++) {
+    for (var pass = 0; pass < 6; pass++) {
       var overflow = s.scrollHeight - A4_PX;
       if (overflow <= 1) break;
       var current = parseFloat(body.style.zoom) || 1;
@@ -2330,28 +2428,128 @@ window.DEFAULT_FUNDS = [
     sheets.forEach(fitSheet);   /* 必須在進入 DOM 之後量測 */
   }
 
-  function docHeader() {
+
+  /* 報頭：客戶名字與「每月可領」是客戶第一眼會看的兩件事，其餘退居其後 */
+  function mastHead(res) {
     var now = new Date();
-    var stamp = now.getFullYear() + '/' + (now.getMonth() + 1) + '/' + now.getDate() + ' ' +
-      String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
-    return h('div', { class: 'doc-header' }, [
-      h('div', { class: 'doc-header__name', text: state.plan.client || '基金配置建議書' }),
-      h('div', { class: 'doc-header__row' }, [
-        h('div', { class: 'doc-header__meta', html:
-          '客戶：<b>' + esc(state.plan.client || '—') + '</b><span class="sep">|</span>' +
-          '承辦顧問：<b>' + esc(state.plan.advisor || '—') + '</b>' }),
-        h('div', { class: 'doc-header__dates', html:
-          '淨值基準：' + fmtDateFull(state.meta.navAsOf) + '<br>產出日期：' + stamp })
+    var stamp = now.getFullYear() + '/' + (now.getMonth() + 1) + '/' + now.getDate();
+    var p5 = projAt(res, 5), p10 = projAt(res, 10);
+
+    return h('div', { class: 'mast' }, [
+      h('div', { class: 'mast__id' }, [
+        h('div', { class: 'mast__eyebrow', text: '投資配置建議書' }),
+        h('div', { class: 'mast__name', text: state.plan.client || '未填客戶姓名' }),
+        h('div', { class: 'mast__rule' }),
+        h('div', { class: 'mast__meta', html:
+          '投資方案：<b>' + esc(state.plan.planName || '—') + '</b>' +
+          '<span class="sep">|</span>投資金額：<b>NT$ ' + num(res.amount) + '</b><br>' +
+          '承辦顧問：<b>' + esc(state.plan.advisor || '—') + '</b>' +
+          '<span class="sep">|</span>淨值基準 ' + fmtDateFull(state.meta.navAsOf) +
+          '<span class="sep">|</span>產出 ' + stamp })
+      ]),
+      h('div', { class: 'hero' }, [
+        h('div', { class: 'hero__label', text: '預估每月可領' }),
+        h('div', { class: 'hero__value', html: '<small>NT$</small>' + num(res.monthlyIncome) }),
+        h('div', { class: 'hero__foot', text:
+          '加權年化配息率 ' + pct(res.weightedYield) + '　·　' +
+          (state.plan.mode === 'total' ? '配息再投入試算' : '配息領出試算') }),
+        h('div', { class: 'hero__split' }, [
+          h('div', { class: 'hero__cell' }, [
+            h('div', { class: 'k', text: '5 年後資產' }),
+            h('div', { class: 'v', html: '<small>NT$</small>' + num(p5.total) }),
+            h('div', { class: 's', text: '年化 ' + pct(p5.cagr, 1) })
+          ]),
+          h('div', { class: 'hero__cell' }, [
+            h('div', { class: 'k', text: '10 年後資產' }),
+            h('div', { class: 'v', html: '<small>NT$</small>' + num(p10.total) }),
+            h('div', { class: 's', text: '年化 ' + pct(p10.cagr, 1) })
+          ])
+        ])
       ])
     ]);
   }
 
-  function docH(n, title, note) {
-    return h('div', { class: 'doc-h' }, [
-      h('span', { class: 'doc-h__n', text: n + '.' }),
-      h('span', { text: title }),
-      note ? h('span', { class: 'doc-h__note', text: note }) : null
+  function secHead(title, note) {
+    return h('div', { class: 'sec__head' }, [
+      h('span', { class: 'sec__title', text: title }),
+      note ? h('span', { class: 'sec__note', text: note }) : null
     ]);
+  }
+
+  /* 一條 100% 橫條就能看出組合的形狀，比逐列讀比例快得多 */
+  function compositionStrip(res) {
+    var strip = h('div', { class: 'compo' });
+    res.items.forEach(function (r) {
+      var pctv = r.share * 100;
+      strip.appendChild(h('div', {
+        class: 'compo__seg',
+        style: 'flex:' + pctv + ' 1 0; background:' + r.color,
+        title: r.fund.short + ' ' + pctv.toFixed(1) + '%',
+        text: pctv >= 7 ? pctv.toFixed(0) + '%' : ''
+      }));
+    });
+    return strip;
+  }
+
+  /* 資產類別／投資區域／幣別：水平長條比甜甜圈省空間，也比較好比長度 */
+  function spreadBlock(res, opts) {
+    opts = opts || {};
+    var titles = { assetClass: '資產類別', region: '投資區域', currency: '幣別' };
+    var wrap = h('div', { class: opts.rootClass || 'pspread' });
+
+    ['assetClass', 'region', 'currency'].forEach(function (key) {
+      var slices = groupBy(res, key);
+      var total = slices.reduce(function (s, x) { return s + x.value; }, 0) || 1;
+
+      var bar = h('div', { class: 'psp__bar' });
+      var keys = h('div', { class: 'psp__keys' });
+
+      slices.forEach(function (s) {
+        var share = (s.value / total) * 100;
+        bar.appendChild(h('div', {
+          class: 'psp__seg',
+          style: 'flex:' + share + ' 1 0; background:' + s.color,
+          title: s.label + ' ' + share.toFixed(1) + '%',
+          text: share >= 12 ? share.toFixed(0) + '%' : ''
+        }));
+        keys.appendChild(h('span', { class: 'psp__key' }, [
+          h('span', { class: 'psp__dot', style: 'background:' + s.color }),
+          s.label + ' ' + share.toFixed(1) + '%'
+        ]));
+      });
+
+      wrap.appendChild(h('div', {}, [
+        h('div', { class: 'psp__label', text: titles[key] }),
+        bar,
+        keys
+      ]));
+    });
+    return wrap;
+  }
+
+  /* 成長軌跡的堆疊層。兩種配息處理方式的分層不同。 */
+  function growthSeries(res) {
+    if (state.plan.mode === 'total') {
+      return [
+        { name: '投入本金', color: 'var(--series-2)', values: res.projections.map(function () { return res.amount; }), solid: true },
+        { name: '預估獲利', color: 'var(--series-1)', values: res.projections.map(function (p) { return Math.max(0, p.gain); }) }
+      ];
+    }
+    return [
+      { name: '投入本金', color: 'var(--series-2)', values: res.projections.map(function () { return res.amount; }), solid: true },
+      { name: '資本增值', color: 'var(--series-1)', values: res.projections.map(function (p) { return Math.max(0, p.capital - res.amount); }) },
+      { name: '累計已領配息', color: 'var(--series-3)', values: res.projections.map(function (p) { return p.cumIncome; }) }
+    ];
+  }
+
+  function milestoneRow(res) {
+    return h('div', { class: 'milestones' }, res.projections.map(function (p) {
+      return h('div', { class: 'ms' }, [
+        h('div', { class: 'ms__y', text: p.years + ' 年' }),
+        h('div', { class: 'ms__v', text: num(p.total) }),
+        h('div', { class: 'ms__g', text: (p.gain >= 0 ? '+' : '') + num(p.gain) })
+      ]);
+    }));
   }
 
   function buildReportSheets() {
@@ -2359,47 +2557,13 @@ window.DEFAULT_FUNDS = [
     var sheets = [];
     if (!res.items.length) return sheets;
 
-    var p5 = projAt(res, 5), p10 = projAt(res, 10);
+    var totalPages = 2 + Math.ceil(res.items.length / APPENDIX_PER_PAGE);
 
     /* ------------------------------------------------- 第 1 頁：總覽 --- */
     var page1 = [];
-    page1.push(docHeader());
+    page1.push(mastHead(res));
 
-    page1.push(h('div', { class: 'doc-block' }, [
-      h('div', { class: 'ov-grid' }, [
-        h('div', {}, [
-          docH(1, '投資計畫總覽'),
-          h('div', { class: 'pcard' }, [
-            h('div', { class: 'pcard__label', text: '投資方案' }),
-            h('div', { class: 'pcard__plan', text: state.plan.planName || '—' }),
-            h('div', { class: 'pcard__label', text: '投資金額' }),
-            h('div', { class: 'pcard__amt', html: '<small>NT$</small>' + num(res.amount) })
-          ])
-        ]),
-        h('div', {}, [
-          docH(2, '預估成效分析', state.plan.mode === 'total' ? '配息再投入（總報酬）' : '配息領出'),
-          h('div', { class: 'ov-stats' }, [
-            h('div', { class: 'pstat pstat--key' }, [
-              h('div', { class: 'pstat__label', text: '預估月領息' }),
-              h('div', { class: 'pstat__value', html: '<small>NT$</small>' + num(res.monthlyIncome) }),
-              h('div', { class: 'pstat__foot', text: '加權年化配息率 ' + pct(res.weightedYield) })
-            ]),
-            h('div', { class: 'pstat' }, [
-              h('div', { class: 'pstat__label', text: '5年資產預估' }),
-              h('div', { class: 'pstat__value', html: '<small>NT$</small>' + num(p5.total) }),
-              h('div', { class: 'pstat__foot', text: '年化 ' + pct(p5.cagr, 1) })
-            ]),
-            h('div', { class: 'pstat' }, [
-              h('div', { class: 'pstat__label', text: '10年資產預估' }),
-              h('div', { class: 'pstat__value', html: '<small>NT$</small>' + num(p10.total) }),
-              h('div', { class: 'pstat__foot', text: '年化 ' + pct(p10.cagr, 1) })
-            ])
-          ])
-        ])
-      ])
-    ]));
-
-    /* 配置明細表 */
+    /* 配置一覽 */
     var rows = res.items.map(function (r) {
       return h('tr', {}, [
         h('td', { class: 'name' }, [
@@ -2415,8 +2579,9 @@ window.DEFAULT_FUNDS = [
       ]);
     });
 
-    page1.push(h('div', { class: 'doc-block' }, [
-      docH(3, '配置明細表', '共 ' + res.items.length + ' 檔標的'),
+    page1.push(h('div', { class: 'sec' }, [
+      secHead('配置一覽', '共 ' + res.items.length + ' 檔標的'),
+      compositionStrip(res),
       h('table', { class: 'ptable' }, [
         h('thead', {}, [h('tr', {}, [
           h('th', { text: '標的名稱' }),
@@ -2440,73 +2605,56 @@ window.DEFAULT_FUNDS = [
       ])
     ]));
 
-    /* 動能成長分析 */
-    var lineMount = h('div', {}), barMount = h('div', {});
-    var lineCard = h('div', { class: 'pchart' }, [
-      h('div', { class: 'pchart__title', text: '預估資產價值曲線' }),
-      h('div', { class: 'pchart__sub', text: state.plan.mode === 'total' ? '配息再投入（總報酬）' : '本金部位＋累計已領配息' }),
-      lineMount
+    /* 成長軌跡 */
+    var areaMount = h('div', {});
+    var areaCard = h('div', { class: 'pchart' }, [
+      h('div', { class: 'pchart__title', text: '預估資產成長軌跡' }),
+      h('div', { class: 'pchart__sub', text:
+        '面積下層為投入本金，上層為預估獲利；總高度即預估總值。各年期採該年期年化報酬率推算。' }),
+      areaMount
     ]);
-    var barCard = h('div', { class: 'pchart' }, [
-      h('div', { class: 'pchart__title', text: '累積獲利結構圖' }),
-      h('div', { class: 'pchart__sub', text: '投入本金與預估獲利的組成' }),
-      barMount
-    ]);
-    page1.push(h('div', { class: 'doc-block' }, [
-      docH(4, '動能成長分析', '各年期採該年期年化報酬率推算'),
-      h('div', { class: 'pchart-grid pchart-grid--2' }, [lineCard, barCard])
+    page1.push(h('div', { class: 'sec' }, [
+      secHead('資產成長預估', state.plan.mode === 'total' ? '配息再投入（總報酬）' : '配息領出：本金部位＋累計已領配息'),
+      areaCard,
+      milestoneRow(res)
     ]));
 
-    /* 區域分析 */
-    var donutCards = ['assetClass', 'region', 'currency'].map(function (key) {
-      var titles = { assetClass: '資產類別', region: '投資區域', currency: '幣別比例' };
-      var slices = groupBy(res, key);
-      var mount = h('div', {});
-      var card = h('div', { class: 'pchart' }, [
-        h('div', { class: 'pchart__title', text: titles[key] }),
-        h('div', { class: 'pchart__sub', text: '依投資金額占比' }),
-        mount
-      ]);
-      card._render = function () {
-        window.Charts.donut(mount, { slices: slices, maxWidth: 84 });
-        window.Charts.legend(card, slices.map(function (s) {
-          return { label: s.label, color: s.color, value: (s.value / res.amount * 100).toFixed(0) + '%' };
-        }));
-      };
-      return card;
-    });
-    page1.push(h('div', { class: 'doc-block' }, [
-      docH(5, '資產配置區域分析'),
-      h('div', { class: 'pchart-grid pchart-grid--3' }, donutCards)
+    /* 分散度 */
+    page1.push(h('div', { class: 'sec' }, [
+      secHead('風險分散度', '依投資金額占比'),
+      spreadBlock(res)
     ]));
 
     page1.push(disclaimerBlock(res));
 
-    var totalPages = 1 + Math.ceil(res.items.length / APPENDIX_PER_PAGE);
-    var s1 = sheet(page1, state.meta.navNote, 1, totalPages);
-    sheets.push(s1);
+    sheets.push(sheet(page1, navNote(), 1, totalPages));
 
     /* 圖表在節點建立後再繪，確保 CSS 變數已可解析 */
-    window.Charts.line(lineMount, {
-      data: res.projections.map(function (p) { return { label: p.years + 'Y', value: p.total, note: '年化 ' + pct(p.cagr, 1) }; }),
-      baseline: res.amount, height: 132
+    var series = growthSeries(res);
+    window.Charts.area(areaMount, {
+      labels: res.projections.map(function (p) { return p.years + 'Y'; }),
+      series: series, width: 900, height: 190
     });
-    buildStack(barMount, barCard, res, 132);
-    donutCards.forEach(function (c) { c._render(); });
+    window.Charts.legend(areaCard, series.map(function (s) { return { label: s.name, color: s.color }; }));
 
     /* --------------------------------------------- 第 2 頁起：持倉附錄 --- */
     var chunks = [];
-    for (var i = 0; i < res.items.length; i += APPENDIX_PER_PAGE) chunks.push(res.items.slice(i, i + APPENDIX_PER_PAGE));
+    for (var i = 0; i < res.items.length; i += APPENDIX_PER_PAGE) {
+      chunks.push(res.items.slice(i, i + APPENDIX_PER_PAGE));
+    }
 
     chunks.forEach(function (chunk, ci) {
       var cards = chunk.map(function (r) {
         return h('div', { class: 'hold-card' }, [
           h('div', { class: 'hold-card__head' }, [
             h('h4', { text: r.fund.name }),
-            h('div', { class: 'sub', text: '持股基準日 ' + fmtDateFull(r.fund.holdingsDate) + '　配置 ' + (r.share * 100).toFixed(1) + '%' })
+            h('div', { class: 'sub', text: '持股基準日 ' + fmtDateFull(r.fund.holdingsDate) + '　·　配置 ' + (r.share * 100).toFixed(1) + '%' })
           ]),
           h('table', {}, [
-            h('thead', {}, [h('tr', {}, [h('th', { text: '標的名稱' }), h('th', { class: 'num', style: 'text-align:right', text: '權重' })])]),
+            h('thead', {}, [h('tr', {}, [
+              h('th', { text: '標的名稱' }),
+              h('th', { class: 'num', style: 'text-align:right', text: '權重' })
+            ])]),
             h('tbody', {}, (r.fund.holdings || []).map(function (x) {
               return h('tr', {}, [h('td', { text: x.name }), h('td', { class: 'num', text: x.weight.toFixed(2) + '%' })]);
             }))
@@ -2514,16 +2662,113 @@ window.DEFAULT_FUNDS = [
         ]);
       });
 
-      var body = [
-        docH(6, '報告附件：近期標的最大持倉明細' + (chunks.length > 1 ? '（' + (ci + 1) + '/' + chunks.length + '）' : '')),
-        h('p', { class: 'muted', style: 'font-size:8pt;margin-bottom:3mm', text: '此頁為投資組合中各標的之核心持股權重明細，資料取自最近一期公開月報或每日持倉。' }),
-        h('div', { class: 'hold-grid' }, cards)
-      ];
-      sheets.push(sheet(body, state.meta.navNote, ci + 2, totalPages));
+      sheets.push(sheet([
+        h('div', { class: 'sec' }, [
+          secHead('持倉明細' + (chunks.length > 1 ? '（' + (ci + 1) + '／' + chunks.length + '）' : ''),
+                  '資料取自最近一期公開月報或每日持倉'),
+          h('p', { style: 'font-size:7.8pt;color:var(--p-ink-2);margin-bottom:3mm', text:
+            '這一頁列出您的組合中，各標的最大的五檔持股。同一家公司出現在多檔基金裡是正常的，' +
+            '但如果同一檔股票在整體組合中重複出現，實際集中度會比單看一檔基金更高。' }),
+          h('div', { class: 'hold-grid' }, cards)
+        ])
+      ], navNote(), ci + 2, totalPages));
     });
+
+    /* ------------------------------------------------ 最後一頁：小叮嚀 --- */
+    sheets.push(buildTipsSheet(totalPages));
 
     return sheets;
   }
+
+  /* ==========================================================================
+     長期持有小叮嚀（建議書背面）
+     ====================================================================== */
+
+  var LONG_TERM_TIPS = [
+    {
+      t: '時間比時機更重要',
+      b: '長期報酬往往集中在少數幾個大漲的交易日。想「等跌一點再進場」而剛好錯過那幾天，' +
+         '損失通常大於你原本想避開的那段跌幅。<b>留在市場裡的時間，才是報酬的來源。</b>'
+    },
+    {
+      t: '帳面虧損不是真的虧損',
+      b: '淨值下跌時，你持有的<b>單位數一張也沒有少</b>。只有在按下贖回的那一刻，' +
+         '帳上的數字才會變成真正實現的損益。'
+    },
+    {
+      t: '配息不等於獲利',
+      b: '配息有可能一部分來自本金。判斷一檔基金好不好，要看<b>「淨值成長＋配息」的總報酬</b>，' +
+         '而不是只比較配息率高低。配息率特別高的，更要看淨值是不是在往下走。'
+    },
+    {
+      t: '定期檢視，不是定期更換',
+      b: '建議一年檢視一到兩次即可。頻繁轉換會付出申購費、買賣價差與空手期，' +
+         '<b>這些成本不會出現在任何一張報酬率表上</b>，卻會實實在在扣掉你的報酬。'
+    },
+    {
+      t: '別用短期要用的錢投資',
+      b: '六個月的生活費、一年內確定要用的錢（學費、頭期款、購屋款）請留在活存。' +
+         '<b>被迫在低點贖回，是成本最高的一種賣出。</b>'
+    },
+    {
+      t: '美元計價部位有兩個變數',
+      b: '美元計價基金換算成台幣的價值，同時受<b>基金淨值</b>與<b>匯率</b>影響。' +
+         '短期的匯率波動不代表基金本身表現不好，兩者要分開看。'
+    },
+    {
+      t: '下跌時的扣款最有價值',
+      b: '如果採定期定額，同樣的金額在低點會買到<b>更多單位</b>。' +
+         '市場回升時，正是這些在低點累積的單位帶來報酬。下跌時停扣，等於放棄了這一段。'
+    },
+    {
+      t: '看得懂才抱得住',
+      b: '如果你說不出手上這檔基金<b>靠什麼賺錢</b>，下跌時就很難撐得住。' +
+         '任何一檔標的有疑問，隨時找您的顧問問清楚，這比自己猜測後恐慌贖回好得多。'
+    }
+  ];
+
+  function buildTipsSheet(totalPages) {
+    var body = [
+      h('div', { class: 'tips-lead' }, [
+        h('h3', { text: '給' + (state.plan.client ? '　' + state.plan.client + '　' : '您') + '的長期持有叮嚀' }),
+        h('p', { text:
+          '前面幾頁的數字，全部建立在「長期持有」這個前提上。這份配置的預估成效，' +
+          '只有在您能撐過中間必然出現的波動時才會兌現。以下八件事，' +
+          '是實務上最常見、也最容易讓長期計畫中途夭折的地方。' })
+      ]),
+      h('div', { class: 'tips-grid' }, LONG_TERM_TIPS.map(function (tip, i) {
+        return h('div', { class: 'tip' }, [
+          h('div', { class: 'tip__n', text: String(i + 1).padStart(2, '0') }),
+          h('div', {}, [
+            h('div', { class: 'tip__title', text: tip.t }),
+            h('div', { class: 'tip__body', html: tip.b })
+          ])
+        ]);
+      })),
+      h('div', { class: 'tips-close' }, [
+        h('div', { class: 'tips-close__note', html:
+          '<b>市場下跌時，請先聯絡您的顧問，再決定要不要動。</b><br>' +
+          '多數讓長期報酬打折的決定，都是在情緒最強烈的那幾天做出來的。' +
+          '一通電話的時間，通常就足以把「想賣掉」和「該賣掉」分開。' }),
+        h('div', { class: 'sign' }, [
+          h('div', { class: 'sign__row' }, [
+            h('span', { class: 'sign__k', text: '承辦顧問' }),
+            h('span', { class: 'sign__val', text: state.plan.advisor || '' })
+          ]),
+          h('div', { class: 'sign__row' }, [
+            h('span', { class: 'sign__k', text: '聯絡方式' }),
+            h('span', { class: 'sign__line' })
+          ]),
+          h('div', { class: 'sign__row' }, [
+            h('span', { class: 'sign__k', text: '下次檢視' }),
+            h('span', { class: 'sign__line' })
+          ])
+        ])
+      ])
+    ];
+    return sheet(body, '本頁為投資觀念提醒，不構成個別投資建議', totalPages, totalPages);
+  }
+
 
   function disclaimerBlock(res) {
     var items = [
@@ -2581,16 +2826,26 @@ window.DEFAULT_FUNDS = [
 
     /* 封面 */
     sheets.push(sheet([
-      h('div', { class: 'doc-header' }, [
-        h('div', { class: 'doc-header__name', text: '基金投資方向、RR值與前五大持股' }),
-        h('div', { class: 'doc-header__row' }, [
-          h('div', { class: 'doc-header__meta', html:
-            '淨值基準：截至 <b>' + fmtDateFull(state.meta.navAsOf) + '</b> 最新可得公告<span class="sep">|</span>持股基準：最近一期公開月報' }),
-          h('div', { class: 'doc-header__dates', html: '收錄 ' + list.length + ' 檔<br>' + fmtDateFull(todayISO()) + ' 產出' })
+      h('div', { class: 'mast' }, [
+        h('div', { class: 'mast__id' }, [
+          h('div', { class: 'mast__eyebrow', text: '基金比較表' }),
+          h('div', { class: 'mast__name', style: 'font-size:19pt', text: '投資方向、RR 值與前五大持股' }),
+          h('div', { class: 'mast__rule' }),
+          h('div', { class: 'mast__meta', html:
+            '淨值基準：<b>' + fmtDateFull(state.meta.navAsOf) + '</b> 最新可得公告' +
+            '<span class="sep">|</span>持股基準：最近一期公開月報<br>' +
+            '收錄 <b>' + list.length + '</b> 檔　·　產出 ' + fmtDateFull(todayISO()) })
+        ]),
+        h('div', { class: 'hero' }, [
+          h('div', { class: 'hero__label', text: '收錄檔數' }),
+          h('div', { class: 'hero__value', text: String(list.length) }),
+          h('div', { class: 'hero__foot', text: '涵蓋 ' + window.CATEGORIES.filter(function (c) {
+            return list.some(function (f) { return f.cat === c.id; });
+          }).length + ' 個分類' })
         ])
       ]),
-      h('div', { class: 'doc-block' }, [
-        docH(1, '本份比較表的閱讀方式'),
+      h('div', { class: 'sec' }, [
+        secHead('本份比較表的閱讀方式'),
         h('table', { class: 'ptable' }, [
           h('thead', {}, [h('tr', {}, [
             h('th', { text: '欄位' }), h('th', { text: '基準' }), h('th', { text: '說明' })
@@ -2607,8 +2862,8 @@ window.DEFAULT_FUNDS = [
           ])
         ])
       ]),
-      h('div', { class: 'doc-block' }, [
-        docH(2, '收錄分類'),
+      h('div', { class: 'sec' }, [
+        secHead('收錄分類'),
         h('table', { class: 'ptable' }, [
           h('thead', {}, [h('tr', {}, [h('th', { text: '分類' }), h('th', { class: 'num', text: '檔數' }), h('th', { text: '判讀重點' })])]),
           h('tbody', {}, window.CATEGORIES.map(function (c) {
@@ -2662,7 +2917,7 @@ window.DEFAULT_FUNDS = [
           }))
         ])
       ];
-      sheets.push(sheet(body, state.meta.navNote + '｜' + state.meta.rrNote, gi + 2, total));
+      sheets.push(sheet(body, navNote() + '｜' + state.meta.rrNote, gi + 2, total));
     });
 
     return sheets;
@@ -2729,11 +2984,11 @@ window.DEFAULT_FUNDS = [
           h('div', { class: 'fund-name', text: f.name }),
           h('div', { class: 'fund-meta', text: catName(f.cat) + '｜' + f.currency + '｜' + f.payout })
         ]),
-        h('td', { class: 'num w-nav' }, [numInput(f, function () { return f.nav; }, function (v) { f.nav = v; })]),
+        h('td', { class: 'num w-nav' }, [numInput(f, function () { return f.nav; }, function (v) { f.nav = v; clearAutoTag(f); })]),
         h('td', { class: 'w-date' }, [h('input', {
           class: 'input', type: 'date', value: f.navDate || '',
           'aria-label': f.short + ' 淨值日',
-          onchange: function (e) { f.navDate = e.target.value; saveState(); renderCompare(); }
+          onchange: function (e) { f.navDate = e.target.value; clearAutoTag(f); saveState(); renderCompare(); }
         })]),
         h('td', { class: 'num w-rr' }, [numInput(f, function () { return f.rr; }, function (v) { f.rr = v; })]),
         h('td', { class: 'num w-pct' }, [numInput(f, function () { return f.yield; }, function (v) { f.yield = v || 0; })]),
@@ -2762,7 +3017,7 @@ window.DEFAULT_FUNDS = [
       })[0];
       if (!f) { miss.push(key); return; }
       var nav = Number(String(cells[1]).replace(/[^0-9.\-]/g, ''));
-      if (!isNaN(nav) && cells[1] !== '') f.nav = nav;
+      if (!isNaN(nav) && cells[1] !== '') { f.nav = nav; clearAutoTag(f); }
       if (cells[2]) {
         var d = cells[2].replace(/\//g, '-');
         if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(d)) {
@@ -2990,10 +3245,17 @@ window.DEFAULT_FUNDS = [
   function init() {
     loadState();
     seedIfEmpty();
-    $('#navAsOf').value = state.meta.navAsOf;
     bindControls();
     renderAll();
     switchTab('compare');
+
+    loadNavSnapshot().then(function (applied) {
+      $('#navAsOf').value = state.meta.navAsOf;
+      renderNavStatus();
+      if (applied) { saveState(); renderAll(); }
+    });
+    $('#navAsOf').value = state.meta.navAsOf;
+    renderNavStatus();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

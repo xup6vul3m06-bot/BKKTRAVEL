@@ -40,6 +40,21 @@ def main() -> None:
     html = re.sub(r'<link rel="stylesheet" href="([^"]+)">', inline_css, html)
     html = re.sub(r'<script src="([^"]+)"></script>', inline_js, html)
 
+    # 單一檔案沒有同網域可以讀，把最新一次自動更新的價格直接烤進去
+    nav = ROOT / 'data' / 'nav.json'
+    if nav.exists():
+        snapshot = nav.read_text(encoding='utf-8').replace('</script>', '<\\/script>')
+        html = html.replace(
+            '<script>\n/* ==== assets/funds.js ==== */',
+            f'<script>\n/* ==== data/nav.json（打包當下的自動更新快照）==== */\n'
+            f'window.NAV_SNAPSHOT = {snapshot};\n</script>\n'
+            f'<script>\n/* ==== assets/funds.js ==== */',
+            1
+        )
+        print(f'已內嵌 data/nav.json')
+    else:
+        print('找不到 data/nav.json，單一檔案將使用內建淨值')
+
     leftovers = re.findall(r'(?:href|src)="(assets/[^"]+)"', html)
     if leftovers:
         sys.exit(f'仍有未內嵌的外部檔案：{leftovers}')
