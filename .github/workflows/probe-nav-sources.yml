@@ -1,0 +1,24 @@
+name: 探測淨值來源
+
+# 一次性的可行性測試：在有完整對外連線的 runner 上實際打各個候選來源，
+# 把結果印進執行紀錄，據此決定正式抓取程式要用哪一個。
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - claude/fund-comparison-dividend-site-qqg4sk
+    paths:
+      - 'fund-report/scripts/probe-sources.mjs'
+      - '.github/workflows/probe-nav-sources.yml'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: 執行探測
+        run: node fund-report/scripts/probe-sources.mjs
