@@ -329,6 +329,22 @@
     return s + ' <span class="as-of">（' + fmtDate(f.holdingsDate) + '）</span>';
   }
 
+  /* 建議書上的持股清單：客戶要看的是「持了哪家公司」，
+     CORP／INC 這類法人字尾只是雜訊，拿掉後多半能排成一行。
+     比較表沿用原始名稱，因為那是給顧問核對用的。 */
+  function holdingsCompact(f) {
+    if (!f.holdings || !f.holdings.length) return '<span class="muted">—</span>';
+    var parts = f.holdings.map(function (x) {
+      var name = String(x.name)
+        .replace(/\s+(CORP|INC|LTD|PLC|CO|SA|AG|NV|GROUP)\.?$/i, '')
+        .replace(/\s+INC-CL\s+([A-Z])$/i, ' $1股')
+        .replace(/-CL\s+([A-Z])$/i, ' $1股')
+        .trim();
+      return esc(name) + ' <b>' + x.weight.toFixed(2) + '%</b>';
+    });
+    return parts.join('・') + ' <span class="as-of">（' + fmtDate(f.holdingsDate) + '）</span>';
+  }
+
   function navHTML(f) {
     if (f.nav === null || f.nav === undefined) return '<span class="muted">待平台核對</span>';
     var tag = f.navSource ? '<br><span class="src-tag">自動・' + esc(f.navKind || '收盤價') + '</span>' : '';
@@ -628,15 +644,17 @@
   /* 標的數量會撐高版面。內容超過一張 A4 時整頁等比縮到剛好一頁，
      避免最後一段被切到下一頁、或印出一張空白紙。 */
   var A4_PX = 297 / 25.4 * 96;
-  var APPENDIX_PER_PAGE = 6;   /* 每頁 2 欄 × 3 列，剛好填滿附錄頁 */
 
   function fitSheet(s) {
     var body = s.querySelector('.sheet__body');
     if (!body) return;
     body.style.zoom = '';
+    /* 留 3px 餘裕：列印時的四捨五入若讓內容多出零點幾個像素，
+       瀏覽器就會多吐一張空白紙 */
+    var target = A4_PX - 3;
     for (var pass = 0; pass < 6; pass++) {
-      var overflow = s.scrollHeight - A4_PX;
-      if (overflow <= 1) break;
+      var overflow = s.scrollHeight - target;
+      if (overflow <= 0) break;
       var current = parseFloat(body.style.zoom) || 1;
       var bodyH = body.scrollHeight * current;
       var next = Math.max(0.62, current * (bodyH - overflow) / bodyH);
@@ -774,12 +792,37 @@
     }));
   }
 
+  /* 持股透視：一列一檔的緊湊表，放在第 2 頁當附錄。
+     擺在叮嚀之後，讓背面先傳達給客戶的訊息，資料備查在後。 */
+  function holdingsSection(res) {
+    return h('div', { class: 'sec' }, [
+      secHead('持股透視', '各標的前五大持股，取自最近一期公開月報或每日持倉'),
+      h('table', { class: 'ptable ptable--hold' }, [
+        h('thead', {}, [h('tr', {}, [
+          h('th', { text: '標的' }),
+          h('th', { text: '前五大持股與占比（持股基準日）' })
+        ])]),
+        h('tbody', {}, res.items.map(function (r) {
+          return h('tr', {}, [
+            h('td', { class: 'name' }, [
+              h('span', { class: 'pswatch', style: 'background:' + r.color }),
+              r.fund.short
+            ]),
+            h('td', { class: 'hold-line', html: holdingsCompact(r.fund) })
+          ]);
+        }))
+      ]),
+      h('p', { class: 'hold-caveat', text:
+        '同一檔股票若在多檔基金中重複出現，整體組合的實際集中度會比單看一檔基金更高。' })
+    ]);
+  }
+
   function buildReportSheets() {
     var res = compute();
     var sheets = [];
     if (!res.items.length) return sheets;
 
-    var totalPages = 2 + Math.ceil(res.items.length / APPENDIX_PER_PAGE);
+    var totalPages = 2;   /* 第 1 頁計畫本身，第 2 頁給客戶的叮嚀 */
 
     /* ------------------------------------------------- 第 1 頁：總覽 --- */
     var page1 = [];
@@ -831,8 +874,7 @@
     var areaMount = h('div', {});
     var areaCard = h('div', { class: 'pchart' }, [
       h('div', { class: 'pchart__title', text: '預估資產成長軌跡' }),
-      h('div', { class: 'pchart__sub', text:
-        '面積下層為投入本金，上層為預估獲利；總高度即預估總值。各年期採該年期年化報酬率推算。' }),
+      h('div', { class: 'pchart__sub', text: '總高度為預估總值；各年期採該年期年化報酬率推算' }),
       areaMount
     ]);
     page1.push(h('div', { class: 'sec' }, [
@@ -855,49 +897,12 @@
     var series = growthSeries(res);
     window.Charts.area(areaMount, {
       labels: res.projections.map(function (p) { return p.years + 'Y'; }),
-      series: series, width: 900, height: 190
+      series: series, width: 900, height: 132
     });
     window.Charts.legend(areaCard, series.map(function (s) { return { label: s.name, color: s.color }; }));
 
-    /* --------------------------------------------- 第 2 頁起：持倉附錄 --- */
-    var chunks = [];
-    for (var i = 0; i < res.items.length; i += APPENDIX_PER_PAGE) {
-      chunks.push(res.items.slice(i, i + APPENDIX_PER_PAGE));
-    }
-
-    chunks.forEach(function (chunk, ci) {
-      var cards = chunk.map(function (r) {
-        return h('div', { class: 'hold-card' }, [
-          h('div', { class: 'hold-card__head' }, [
-            h('h4', { text: r.fund.name }),
-            h('div', { class: 'sub', text: '持股基準日 ' + fmtDateFull(r.fund.holdingsDate) + '　·　配置 ' + (r.share * 100).toFixed(1) + '%' })
-          ]),
-          h('table', {}, [
-            h('thead', {}, [h('tr', {}, [
-              h('th', { text: '標的名稱' }),
-              h('th', { class: 'num', style: 'text-align:right', text: '權重' })
-            ])]),
-            h('tbody', {}, (r.fund.holdings || []).map(function (x) {
-              return h('tr', {}, [h('td', { text: x.name }), h('td', { class: 'num', text: x.weight.toFixed(2) + '%' })]);
-            }))
-          ])
-        ]);
-      });
-
-      sheets.push(sheet([
-        h('div', { class: 'sec' }, [
-          secHead('持倉明細' + (chunks.length > 1 ? '（' + (ci + 1) + '／' + chunks.length + '）' : ''),
-                  '資料取自最近一期公開月報或每日持倉'),
-          h('p', { style: 'font-size:7.8pt;color:var(--p-ink-2);margin-bottom:3mm', text:
-            '這一頁列出您的組合中，各標的最大的五檔持股。同一家公司出現在多檔基金裡是正常的，' +
-            '但如果同一檔股票在整體組合中重複出現，實際集中度會比單看一檔基金更高。' }),
-          h('div', { class: 'hold-grid' }, cards)
-        ])
-      ], navNote(), ci + 2, totalPages));
-    });
-
-    /* ------------------------------------------------ 最後一頁：小叮嚀 --- */
-    sheets.push(buildTipsSheet(totalPages));
+    /* ------------------------------------------------- 第 2 頁：小叮嚀 --- */
+    sheets.push(buildTipsSheet(res, totalPages));
 
     return sheets;
   }
@@ -949,7 +954,7 @@
     }
   ];
 
-  function buildTipsSheet(totalPages) {
+  function buildTipsSheet(res, totalPages) {
     var body = [
       h('div', { class: 'tips-lead' }, [
         h('h3', { text: '給' + (state.plan.client ? '　' + state.plan.client + '　' : '您') + '的長期持有叮嚀' }),
@@ -967,6 +972,7 @@
           ])
         ]);
       })),
+      holdingsSection(res),
       h('div', { class: 'tips-close' }, [
         h('div', { class: 'tips-close__note', html:
           '<b>市場下跌時，請先聯絡您的顧問，再決定要不要動。</b><br>' +
@@ -995,11 +1001,11 @@
   function disclaimerBlock(res) {
     var items = [
       '本報告所有數據係以標的之歷史績效與數學模型推估之假設情境，<b>非保證收益、亦不代表未來實際報酬</b>；投資標的之價格可能因市場波動而漲跌，過去績效不代表未來表現。',
-      '本試算之預估報酬以標的近年年化報酬率推算，未計入實際申購／轉換／管理等相關費用、匯率變動及稅負，實際結果將有差異。' +
-        (res.approxUsed ? '<b>部分標的因成立時間較短，缺漏年期已沿用其最長可得年化報酬率替代。</b>' : ''),
-      state.plan.mode === 'total'
-        ? '本試算採「配息再投入」假設，配息金額視為滾入本金；若實際將配息領出，本金成長幅度將低於本表所列。'
-        : '本試算採「配息領出」假設，資產價值已扣除配息對本金的稀釋，累計配息另計於獲利結構圖中。',
+      '預估報酬以標的近年年化報酬率推算，未計入申購／轉換／管理費用、匯率變動及稅負；本表採' +
+        (state.plan.mode === 'total'
+          ? '<b>「配息再投入」</b>假設，配息視為滾入本金，若實際將配息領出，本金成長將低於本表所列。'
+          : '<b>「配息領出」</b>假設，資產價值已扣除配息對本金的稀釋，累計配息另計。') +
+        (res.approxUsed ? '<b>部分標的成立時間較短，缺漏年期已沿用其最長可得年化報酬率替代。</b>' : ''),
       '投資型保險商品（保單連結基金）之投資風險由要保人自行承擔，相關費用、保障內容與贖回條件請以保險公司正式契約條款及商品說明書為準。信貸／房貸資金投入具槓桿風險，可能造成本金虧損，請審慎評估自身還款能力。',
       '本報告僅供理財規劃參考，不構成任何投資要約或保證，實際投保與投資決策請洽專業人員並詳閱公開說明書。'
     ];
