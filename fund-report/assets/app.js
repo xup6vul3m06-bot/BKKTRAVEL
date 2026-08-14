@@ -897,7 +897,7 @@
     var series = growthSeries(res);
     window.Charts.area(areaMount, {
       labels: res.projections.map(function (p) { return p.years + 'Y'; }),
-      series: series, width: 900, height: 132
+      series: series, width: 900, height: 190
     });
     window.Charts.legend(areaCard, series.map(function (s) { return { label: s.name, color: s.color }; }));
 
